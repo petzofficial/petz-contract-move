@@ -1,0 +1,12 @@
+[package]
+name = "PetZ NFT"
+version = "0.0.0"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
+AptosToken = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-token/", rev = "main" }
+
+[addresses]
+aptos_framework = "0x1"
+# replace the admin_addr with the actual admin address we created using CLI
+admin_addr = "0xbeef"
