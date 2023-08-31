@@ -11,7 +11,7 @@ module example_addr::preminted_managed_coin {
     use std::signer;
     use std::string::utf8;
 
-    const ASSET_SYMBOL: vector<u8> = b"MEME";
+    const ASSET_SYMBOL: vector<u8> = b"PGC";
     const PRE_MINTED_TOTAL_SUPPLY: u64 = 10000;
 
     /// Initialize metadata object and store the refs.
@@ -20,11 +20,11 @@ module example_addr::preminted_managed_coin {
         managed_fungible_asset::initialize(
             constructor_ref,
             1000000000, /* maximum_supply */
-            utf8(b"preminted coin"), /* name */
+            utf8(b"PetZ Gold Coin"), /* name */
             utf8(ASSET_SYMBOL), /* symbol */
             8, /* decimals */
-            utf8(b"http://example.com/favicon.ico"), /* icon */
-            utf8(b"http://example.com"), /* project */
+            utf8(b"https://petz.money/favicon.ico"), /* icon */
+            utf8(b"https://petz.money"), /* project */
             vector[false, true, true], /* mint_ref, transfer_ref, burn_ref */
         );
 
