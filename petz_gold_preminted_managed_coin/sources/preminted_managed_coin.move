@@ -25,7 +25,7 @@ module example_addr::preminted_managed_coin {
             8, /* decimals */
             utf8(b"https://petz.money/favicon.ico"), /* icon */
             utf8(b"https://petz.money"), /* project */
-            vector[false, true, true], /* mint_ref, transfer_ref, burn_ref */
+            vector[true, true, true], /* mint_ref, transfer_ref, burn_ref */
         );
 
         // Create mint ref to premint fungible asset with a fixed supply volume into a specific account.
