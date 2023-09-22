@@ -53,9 +53,9 @@ module mint_nft::create_nft_getting_production_ready {
     fun init_module(resource_signer: &signer) {
         let collection_name = string::utf8(b"PetZ NFT Collection");
         let description = string::utf8(b"PetZ NFT: Merging blockchain-powered virtual pets with gamefi incentives, revolutionizing productivity and time management with enchanting companions.");
-        let collection_uri = string::utf8(b"https://nft.petz.money/_metadata.json");
+        let collection_uri = string::utf8(b"https://nft.petz.money/v1/metadata.json");
         let token_name = string::utf8(b"PetZ NFT");
-        let token_uri = string::utf8(b"https://nft.petz.money/metadata/0.json");
+        let token_uri = string::utf8(b"https://nft.petz.money/v1/metadata/0.json");
         // This means that the supply of the token will not be tracked.
         let maximum_supply = 0;
         // This variable sets if we want to allow mutation for collection description, uri, and maximum.
