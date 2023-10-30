@@ -1,12 +1,14 @@
 [package]
-name = "PetZ NFT"
-version = "0.0.0"
-
-[dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
-AptosToken = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-token/", rev = "main" }
-
+name = 'candymachinev2'
+version = '1.0.0'
 [addresses]
+std = "0x1"
+aptos_std = "0x1"
 aptos_framework = "0x1"
-# replace the admin_addr with the actual admin address we created using CLI
-admin_addr = "0xbeef"
+candymachinev2 = "0x82afe3de6e9acaf4f2de72ae50c3851a65bb86576198ef969937d59190873dfd" 
+aptos_token_objects = "0x4"
+[dependencies]
+AptosFramework = {git = 'https://github.com/aptos-labs/aptos-core.git',rev='main',subdir = 'aptos-move/framework/aptos-framework'}
+AptosTokenObjects = {git = 'https://github.com/aptos-labs/aptos-core.git',rev='main',subdir = 'aptos-move/framework/aptos-token-objects'}
+AptosStdlib = {git = 'https://github.com/aptos-labs/aptos-core.git',rev='main',subdir = 'aptos-move/framework/aptos-stdlib'}
+DataStructure = {git = 'https://github.com/aptos-labs/aptos-core.git',rev='main',subdir = 'aptos-move/move-examples/data_structures'}

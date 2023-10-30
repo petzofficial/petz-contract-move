@@ -1,0 +1,7 @@
+build/
+node_modules/
+.aptos
+config.json
+script/build
+.DS_Store
+.testing

@@ -1,0 +1,44 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - releases-v*
+    tags:
+      - v*
+
+jobs:
+
+  tests:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get Aptos
+        uses: pontem-network/get-aptos@main
+        with:
+          version: aptos-cli-v1.0.4
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prover: false
+
+      - name: Build .
+        run: aptos move compile
+        working-directory: .
+
+      - name: Test
+        run: aptos move test
+        working-directory: .
+
+      - name: Test ./liquidswap_staking_tests
+        run: aptos move test
+        working-directory: ./liquidswap_staking_tests
