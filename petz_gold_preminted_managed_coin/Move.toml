@@ -8,4 +8,3 @@ example_addr = "0x82afe3de6e9acaf4f2de72ae50c3851a65bb86576198ef969937d59190873d
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
-ManagedFungibleAsset = { local = "./" }

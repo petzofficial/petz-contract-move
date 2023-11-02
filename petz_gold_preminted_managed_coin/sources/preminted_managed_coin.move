@@ -12,14 +12,14 @@ module example_addr::preminted_managed_coin {
     use std::string::utf8;
 
     const ASSET_SYMBOL: vector<u8> = b"PGC";
-    const PRE_MINTED_TOTAL_SUPPLY: u64 = 1000000;
+    const PRE_MINTED_TOTAL_SUPPLY: u64 = 100000000000000;
 
     /// Initialize metadata object and store the refs.
     fun init_module(admin: &signer) {
         let constructor_ref = &object::create_named_object(admin, ASSET_SYMBOL);
         managed_fungible_asset::initialize(
             constructor_ref,
-            100000000, /* maximum_supply */
+            10000000000000000, /* maximum_supply */
             utf8(b"PetZ Gold Coin"), /* name */
             utf8(ASSET_SYMBOL), /* symbol */
             8, /* decimals */
