@@ -8,7 +8,7 @@ module PetzGoldCoin::petz_gold_coin {
             sender,
             b"PetZ Gold Coin",
             b"PGC",
-            6,
+            8,
             false,
         );
     }

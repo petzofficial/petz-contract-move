@@ -8,7 +8,7 @@ module PetzSilverCoin::petz_silver_coin {
             sender,
             b"PetZ Silver Coin",
             b"PSC",
-            6,
+            8,
             false,
         );
     }
