@@ -1,9 +1,10 @@
 [package]
 name = "PetZ Gold Coin"
-version = "0.0.0"
+version = "0.0.1"
 
 [addresses]
-PetzGoldCoin = "0xc0acbd3f0dc1d5361f8315e60fcbc577a41be51f049ca092ae6db7fa8609fab5"
+petz_gold_coin = "0x92735bf1c879fb028f017a8d02f1a370ea3f8059a55841eec12660853961c4c5"
+PetZGoldCoin = "0x92735bf1c879fb028f017a8d02f1a370ea3f8059a55841eec12660853961c4c5"
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
