@@ -1,9 +1,0 @@
-[package]
-name = "PetZ Silver Coin"
-version = "0.0.0"
-
-[addresses]
-PetzSilverCoin = "0xc0acbd3f0dc1d5361f8315e60fcbc577a41be51f049ca092ae6db7fa8609fab5"
-
-[dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
