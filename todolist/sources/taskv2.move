@@ -3,7 +3,8 @@ module pomodoro_task_management::task {
     use std::signer;
     use std::vector;
     use aptos_std::table::{Self, Table};
-    use aptos_std::coin;
+    use aptos_framework::event;
+    //use aptos_std::coin;
 
     /// Error codes
     const ETASK_ALREADY_EXISTS: u64 = 0;
@@ -39,6 +40,8 @@ module pomodoro_task_management::task {
     /// Task manager struct
     struct TaskManager has key {
         tasks: Table<vector<u8>, Task>,
+        set_task_event: event::EventHandle<Task>,
+        task_counter: u64
     }
 
     public entry fun add_task(
@@ -52,9 +55,13 @@ module pomodoro_task_management::task {
         let account_addr = signer::address_of(account);
 
         if (!exists<TaskManager>(account_addr)) {
-            move_to(account, TaskManager { tasks: table::new() });
-            coin::register<PetZGoldCoin>(account);
-            coin::register<PetZSilverCoin>(account);
+            move_to(account, TaskManager { 
+                tasks: table::new(),
+                set_task_event: account::new_event_handle<Task>(account),
+                task_counter: 0
+            });
+           // coin::register<PetZGoldCoin>(account);
+           // coin::register<PetZSilverCoin>(account);
         };
 
         assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
@@ -62,20 +69,27 @@ module pomodoro_task_management::task {
         assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
 
+        let new_task = Task {
+            task_id,
+            task_name,
+            description,
+            due_date,
+            priority,
+            cycle_count: 0,
+            total_time_spent: 0,
+            owner: account_addr,
+            is_completed: false,
+        };
+
         table::add(
             &mut borrow_global_mut<TaskManager>(account_addr).tasks,
             task_id,
-            Task {
-                task_id,
-                task_name,
-                description,
-                due_date,
-                priority,
-                cycle_count: 0,
-                total_time_spent: 0,
-                owner: account_addr,
-                is_completed: false,
-            },
+            new_task,
+        );
+
+        event::emit_event<Task>(
+            &mut borrow_global_mut<TodoList>(signer_address).set_task_event,
+            new_task,
         );
     }
 
@@ -117,12 +131,12 @@ module pomodoro_task_management::task {
         task.is_completed = true;
 
         // Calculate and distribute rewards
-        let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
-        let developer_fee_gold = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
-        let developer_fee_silver = developer_fee_gold;
+       // let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
+       // let developer_fee_gold = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
+       // let developer_fee_silver = developer_fee_gold;
 
-        coin::deposit(account, coin::mint<PetZGoldCoin>(account_addr, total_reward - developer_fee_gold));
-        coin::deposit(account, coin::mint<PetZSilverCoin>(account_addr, total_reward - developer_fee_silver));
+       // coin::deposit(account, coin::mint<PetZGoldCoin>(account_addr, total_reward - developer_fee_gold));
+       // coin::deposit(account, coin::mint<PetZSilverCoin>(account_addr, total_reward - developer_fee_silver));
     }
 
     /// Delete a task
@@ -166,21 +180,7 @@ module pomodoro_task_management::task {
         );
     }
 
-    /// Get all tasks for an account
-    public fun get_all_tasks(account: &signer): vector<Task> acquires TaskManager {
-        let account_addr = signer::address_of(account);
-        assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
-
-        let tasks = &borrow_global<TaskManager>(account_addr).tasks;
-        let task_vec = vector::empty();
-
-        table::for_each_entry(tasks, |_, task| {
-            vector::push_back(&mut task_vec, *task);
-        });
-
-        task_vec
-    }
-
+        // Add each task to the vecto
     /// Complete a Pomodoro cycle for a task
     public entry fun complete_cycle(account: &signer, task_id: vector<u8>, cycle_duration: u64) acquires TaskManager {
         let account_addr = signer::address_of(account);
@@ -194,7 +194,7 @@ module pomodoro_task_management::task {
         task.total_time_spent = task.total_time_spent + cycle_duration;
     }
 
-    /// Coin types for rewards
-    struct PetZGoldCoin {}
-    struct PetZSilverCoin {}
+    // Coin for rewards
+    //struct PetZGoldCoin {}
+    //struct PetZSilverCoin {}
 }
