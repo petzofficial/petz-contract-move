@@ -56,7 +56,7 @@ module pomodoro_task_management::task {
                 description,
                 date,
                 priority,
-                cycle_count: 0,
+                cycle_count: 1,
                 total_time_spent: 0,
                 owner: account_addr,
                 status: false,
@@ -152,6 +152,17 @@ module pomodoro_task_management::task {
         });
 
         task_vec
+    }
+
+    public fun complete_cycle(account: &signer, task_id: vector<u8>, cycle_duration: u64) acquires TaskManager {
+        let account_addr = signer::address_of(account);
+        assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ENOT_TASK_OWNER));
+
+        let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
+        assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
+
+        task.cycle_count = task.cycle_count + 1;
+        task.total_time_spent = task.total_time_spent + cycle_duration;
     }
 
 
