@@ -7,7 +7,7 @@ module petz_gold_coin::petz_gold_coin {
     use std::vector;
     use aptos_framework::coin::{Coin, BurnCapability, FreezeCapability, MintCapability, Self};
 
-    const MAX_SUPPLY: u128 = 10000000000000000; // 100 million PGC
+    const MAX_SUPPLY: u128 = 50000000000000000; // 500 million PGC
     const ENO_CAPABILITIES: u64 = 1;
     const EALREADY_HAVE_CAP: u64 = 2;
     const EALREADY_DELEGATED: u64 = 3;
@@ -42,8 +42,7 @@ module petz_gold_coin::petz_gold_coin {
             string::utf8(b"PetZ Gold Coin"),
             string::utf8(b"PGC"),
             8, /* decimals */
-            true, /* monitor_supply */
-     //       Some(MAX_SUPPLY)
+            false, /* monitor_supply */
         );
 
         if(!coin::is_account_registered<PetZGoldCoin>(signer::address_of(petz_admin))){
@@ -211,7 +210,6 @@ module petz_gold_coin::petz_gold_coin {
     ) acquires CapStore {
         let account_addr = signer::address_of(account);
         assert!(exists<CapStore<MintCapability<PetZGoldCoin>>>(account_addr), error::not_found(ENO_CAPABILITIES));
-        //assert!(coin::get_supply<PetZGoldCoin>() + amount <= MAX_SUPPLY, error::invalid_argument("Mint would exceed max supply"));
         assert!(*option::borrow(&coin::supply<PetZGoldCoin>()) + (amount as u128) <= MAX_SUPPLY, ERR_EXCEED_MAX_SUPPLY);
 
         let mint_cap = &borrow_global<CapStore<MintCapability<PetZGoldCoin>>>(account_addr).cap;
