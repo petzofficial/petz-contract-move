@@ -41,19 +41,6 @@ module pomodoro_task_management::task {
         tasks: Table<vector<u8>, Task>,
     }
 
-    /// Initialize task manager for an account
-    public entry fun init_task_manager(account: &signer) {
-        let account_addr = signer::address_of(account);
-        if (!exists<TaskManager>(account_addr)) {
-            move_to(account, TaskManager { tasks: table::new() });
-            coin::register<PetZGoldCoin>(account);
-            coin::register<PetZSilverCoin>(account);
-        } else {
-            error::already_exists(ETASK_ALREADY_EXISTS);
-        }
-    }
-
-    /// Add a new task
     public entry fun add_task(
         account: &signer,
         task_id: vector<u8>,
@@ -63,7 +50,13 @@ module pomodoro_task_management::task {
         priority: u8,
     ) acquires TaskManager {
         let account_addr = signer::address_of(account);
-        assert!(!exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
+
+        if (!exists<TaskManager>(account_addr)) {
+            move_to(account, TaskManager { tasks: table::new() });
+            coin::register<PetZGoldCoin>(account);
+            coin::register<PetZSilverCoin>(account);
+        };
+
         assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
         assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
