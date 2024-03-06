@@ -4,6 +4,7 @@ module pomodoro_task_management::task {
     use std::vector;
     use aptos_std::table::{Self, Table};
     use aptos_framework::event;
+    use aptos_framework::account;
     //use aptos_std::coin;
 
     /// Error codes
@@ -41,7 +42,7 @@ module pomodoro_task_management::task {
     struct TaskManager has key {
         tasks: Table<vector<u8>, Task>,
         set_task_event: event::EventHandle<Task>,
-        task_counter: u64
+  //      task_counter: u64
     }
 
     public entry fun add_task(
@@ -58,7 +59,7 @@ module pomodoro_task_management::task {
             move_to(account, TaskManager { 
                 tasks: table::new(),
                 set_task_event: account::new_event_handle<Task>(account),
-                task_counter: 0
+               // task_counter: 0
             });
            // coin::register<PetZGoldCoin>(account);
            // coin::register<PetZSilverCoin>(account);
@@ -87,8 +88,10 @@ module pomodoro_task_management::task {
             new_task,
         );
 
+        //task_manager.task_counter = task_manager.task_counter + 1;
+
         event::emit_event<Task>(
-            &mut borrow_global_mut<TodoList>(signer_address).set_task_event,
+            &mut borrow_global_mut<TaskManager>(account_addr).set_task_event,
             new_task,
         );
     }
