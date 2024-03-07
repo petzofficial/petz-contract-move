@@ -38,7 +38,7 @@ module task_management::task {
         cycle_count: u64,
         total_time_spent: u64,
         owner: address,
-        is_completed: bool,
+        status: u8,
     }
 
     /// Task manager struct
@@ -85,7 +85,7 @@ module task_management::task {
             cycle_count: 0,
             total_time_spent: 0,
             owner: account_addr,
-            is_completed: false,
+            status: 0, //0 pending, 1 in-progress, 2 completed
         };
 
         table::add(
@@ -105,7 +105,7 @@ module task_management::task {
     /// Update an existing task
     public entry fun update_task(
         account: &signer,
-        task_id: u64,
+        //task_id: u64,
         task_name: String,
         description: String,
         due_date: u64,
@@ -113,7 +113,7 @@ module task_management::task {
     ) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
-        assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
+        //assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
@@ -135,9 +135,9 @@ module task_management::task {
 
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
-        assert!(!task.is_completed, error::already_exists(ETASK_ALREADY_EXISTS));
+        assert!(task.status == 1, error::already_exists(ETASK_ALREADY_EXISTS));
 
-        task.is_completed = true;
+        task.status = 2;
 
         // Calculate and distribute rewards
        // let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
@@ -189,7 +189,6 @@ module task_management::task {
         );
     }
 
-        // Add each task to the vecto
     /// Complete a Pomodoro cycle for a task
     public entry fun complete_cycle(account: &signer, task_id: u64, cycle_duration: u64) acquires TaskManager {
         let account_addr = signer::address_of(account);
