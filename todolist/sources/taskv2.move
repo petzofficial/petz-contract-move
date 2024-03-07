@@ -1,7 +1,8 @@
-module pomodoro_task_management::task {
+module task_management::task {
     use std::error;
     use std::signer;
-    use std::vector;
+    use std::string::String;
+    //use std::vector;
     use aptos_std::table::{Self, Table};
     use aptos_framework::event;
     use aptos_framework::account;
@@ -22,14 +23,16 @@ module pomodoro_task_management::task {
     const PRIORITY_HIGH: u8 = 3;
 
     /// Maximum length for task name and description
-    const MAX_TASK_NAME_LENGTH: u64 = 100;
-    const MAX_DESCRIPTION_LENGTH: u64 = 500;
+    //const MAX_TASK_NAME_LENGTH: u64 = 100;
+    //const MAX_DESCRIPTION_LENGTH: u64 = 500;
 
     /// Task struct
     struct Task has copy, drop, store {
-        task_id: vector<u8>,
-        task_name: vector<u8>,
-        description: vector<u8>,
+        task_id: u64,
+        task_name: String,
+        description: String,
+        create_date: u64, // Unix timestamp
+        complete_date: u64, // Unix timestamp
         due_date: u64, // Unix timestamp
         priority: u8,
         cycle_count: u64,
@@ -40,16 +43,17 @@ module pomodoro_task_management::task {
 
     /// Task manager struct
     struct TaskManager has key {
-        tasks: Table<vector<u8>, Task>,
+        tasks: Table<u64, Task>,
         set_task_event: event::EventHandle<Task>,
   //      task_counter: u64
     }
 
     public entry fun add_task(
         account: &signer,
-        task_id: vector<u8>,
-        task_name: vector<u8>,
-        description: vector<u8>,
+        task_id: u64,
+        task_name: String,
+        description: String,
+        create_date: u64,
         due_date: u64,
         priority: u8,
     ) acquires TaskManager {
@@ -66,14 +70,16 @@ module pomodoro_task_management::task {
         };
 
         assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
-        assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
-        assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
 
         let new_task = Task {
             task_id,
             task_name,
             description,
+            create_date,
+            complete_date: 0,
             due_date,
             priority,
             cycle_count: 0,
@@ -99,17 +105,17 @@ module pomodoro_task_management::task {
     /// Update an existing task
     public entry fun update_task(
         account: &signer,
-        task_id: vector<u8>,
-        task_name: vector<u8>,
-        description: vector<u8>,
+        task_id: u64,
+        task_name: String,
+        description: String,
         due_date: u64,
         priority: u8,
     ) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
-        assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
-        assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
 
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
@@ -122,7 +128,7 @@ module pomodoro_task_management::task {
     }
 
     /// Complete a task and receive rewards
-    public entry fun complete_task(account: &signer, task_id: vector<u8>) acquires TaskManager {
+    public entry fun complete_task(account: &signer, task_id: u64) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -143,7 +149,7 @@ module pomodoro_task_management::task {
     }
 
     /// Delete a task
-    public entry fun delete_task(account: &signer, task_id: vector<u8>) acquires TaskManager {
+    public entry fun delete_task(account: &signer, task_id: u64) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -154,8 +160,8 @@ module pomodoro_task_management::task {
         table::remove(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
     }
 
-    /// Get a task by ID
-    public fun get_task(account: &signer, task_id: vector<u8>): Task acquires TaskManager {
+    #[view]
+    public fun get_task(account: &signer, task_id: u64): Task acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -185,7 +191,7 @@ module pomodoro_task_management::task {
 
         // Add each task to the vecto
     /// Complete a Pomodoro cycle for a task
-    public entry fun complete_cycle(account: &signer, task_id: vector<u8>, cycle_duration: u64) acquires TaskManager {
+    public entry fun complete_cycle(account: &signer, task_id: u64, cycle_duration: u64) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
