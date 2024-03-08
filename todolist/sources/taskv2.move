@@ -2,10 +2,11 @@ module task_management::task {
     use std::error;
     use std::signer;
     use std::string::String;
-    //use std::vector;
     use aptos_std::table::{Self, Table};
     use aptos_framework::event;
     use aptos_framework::account;
+    use aptos_framework::timestamp;
+    //use std::hash;
     //use aptos_std::coin;
 
     /// Error codes
@@ -48,12 +49,13 @@ module task_management::task {
   //      task_counter: u64
     }
 
+
     public entry fun add_task(
         account: &signer,
-        task_id: u64,
+//        task_id: u64,
         task_name: String,
         description: String,
-        create_date: u64,
+//        create_date: u64,
         due_date: u64,
         priority: u8,
     ) acquires TaskManager {
@@ -69,16 +71,23 @@ module task_management::task {
            // coin::register<PetZSilverCoin>(account);
         };
 
-        assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
+        //assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        //let task_manager = borrow_global_mut<TaskManager>(account_addr);
+        let current_time = timestamp::now_seconds();
+
+        let timestamp_seconds = timestamp::now_seconds();
+        //let timestamp_bytes = timestamp_seconds.to_le_bytes();
+
+        let unique_id = timestamp_seconds;
 
         let new_task = Task {
-            task_id,
+            task_id: unique_id,
             task_name,
             description,
-            create_date,
+            create_date: current_time,
             complete_date: 0,
             due_date,
             priority,
@@ -90,7 +99,7 @@ module task_management::task {
 
         table::add(
             &mut borrow_global_mut<TaskManager>(account_addr).tasks,
-            task_id,
+            unique_id,
             new_task,
         );
 
@@ -105,7 +114,7 @@ module task_management::task {
     /// Update an existing task
     public entry fun update_task(
         account: &signer,
-        //task_id: u64,
+        task_id: u64,
         task_name: String,
         description: String,
         due_date: u64,
