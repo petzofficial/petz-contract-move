@@ -76,11 +76,10 @@ module task_management::task {
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //let task_manager = borrow_global_mut<TaskManager>(account_addr);
-        let current_time = timestamp::now_seconds();
-
+      
         let timestamp_seconds = timestamp::now_seconds();
+        let current_time = timestamp_seconds;
         //let timestamp_bytes = timestamp_seconds.to_le_bytes();
-
         let unique_id = timestamp_seconds;
 
         let new_task = Task {
@@ -147,6 +146,7 @@ module task_management::task {
         assert!(task.status == 1, error::already_exists(ETASK_ALREADY_EXISTS));
 
         task.status = 2;
+        task.complete_date = timestamp::now_seconds();
 
         // Calculate and distribute rewards
        // let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
