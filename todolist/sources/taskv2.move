@@ -6,8 +6,10 @@ module task_management::task {
     use aptos_framework::event;
     use aptos_framework::account;
     use aptos_framework::timestamp;
+   // use task_management::petz_gold_coin;
+    
     //use std::hash;
-    //use aptos_std::coin;
+    use aptos_framework::coin;
 
     /// Error codes
     const ETASK_ALREADY_EXISTS: u64 = 0;
@@ -50,7 +52,7 @@ module task_management::task {
     }
 
 
-    public entry fun add_task(
+    public entry fun add_task <CoinType> (
         account: &signer,
 //        task_id: u64,
         task_name: String,
@@ -67,7 +69,9 @@ module task_management::task {
                 set_task_event: account::new_event_handle<Task>(account),
                // task_counter: 0
             });
-           // coin::register<PetZGoldCoin>(account);
+            if (!coin::is_account_registered<CoinType>(account_addr)) {
+                coin::register<CoinType>(account);
+            };
            // coin::register<PetZSilverCoin>(account);
         };
 
@@ -136,7 +140,7 @@ module task_management::task {
     }
 
     /// Complete a task and receive rewards
-    public entry fun complete_task(account: &signer, task_id: u64) acquires TaskManager {
+    public entry fun complete_task <CoinType> (account: &signer, task_id: u64) acquires TaskManager{
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -149,12 +153,17 @@ module task_management::task {
         task.complete_date = timestamp::now_seconds();
 
         // Calculate and distribute rewards
-       // let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
-       // let developer_fee_gold = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
-       // let developer_fee_silver = developer_fee_gold;
+        let total_reward : u64 = task.total_time_spent * REWARD_RATE_PER_SECOND;
+        let developer_fee_gold : u64 = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
+       // let developer_fee_silver : u64 = developer_fee_gold;
+       // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
 
-       // coin::deposit(account, coin::mint<PetZGoldCoin>(account_addr, total_reward - developer_fee_gold));
+       // let mint_coin = coin::mint<CoinType>(total_reward - developer_fee_gold, petz_gold_coin::mint_cap);
+        coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
+
+        //coin::mint<CoinType>(account_addr, total_reward - developer_fee_gold);
        // coin::deposit(account, coin::mint<PetZSilverCoin>(account_addr, total_reward - developer_fee_silver));
+      
     }
 
     /// Delete a task
