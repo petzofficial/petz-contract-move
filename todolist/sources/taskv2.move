@@ -12,9 +12,12 @@ module task_management::task {
     use aptos_framework::coin::{Self, MintCapability};
 
     /// Error codes
-    const ETASK_ALREADY_EXISTS: u64 = 0;
+    const ETASK_PRIORITY_ERROR: u64 = 0;
     const ETASK_NOT_FOUND: u64 = 1;
     const ENOT_TASK_OWNER: u64 = 2;
+    /// Account does not have mint capability
+    const ENOT_CAPABILITIES: u64 = 3;
+    const ETASK_STATUS_ERROR: u64 = 4;
 
     /// Reward parameters
     const DEVELOPER_FEE_PERCENTAGE: u64 = 5; // 5%
@@ -86,7 +89,7 @@ module task_management::task {
         //assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
-        assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_PRIORITY_ERROR));
         //let task_manager = borrow_global_mut<TaskManager>(account_addr);
       
         let timestamp_seconds = timestamp::now_seconds();
@@ -133,10 +136,10 @@ module task_management::task {
     ) acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
-        //assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
+        assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
-        assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_ALREADY_EXISTS));
+        assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_PRIORITY_ERROR));
 
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
@@ -155,7 +158,11 @@ module task_management::task {
 
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
-        assert!(task.status == 1, error::already_exists(ETASK_ALREADY_EXISTS));
+        assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
+        assert!(
+            exists<MintCapStore>(account_addr),
+            error::not_found(ENOT_CAPABILITIES),
+        );
 
         task.status = 2;
         task.complete_date = timestamp::now_seconds();
