@@ -33,9 +33,9 @@ module task_management::task {
     //const MAX_DESCRIPTION_LENGTH: u64 = 500;
 
     
-    struct CoinType has key {}
+    //struct CoinType has key {}
 
-    struct MintCapStore has key {
+    struct MintCapStore <phantom CoinType > has key {
         mint_cap: MintCapability<CoinType>,
     }
 
@@ -155,7 +155,7 @@ module task_management::task {
     }
 
     /// Complete a task and receive rewards
-    public entry fun complete_task (account: &signer, task_id: u64) acquires TaskManager, MintCapStore{
+    public entry fun complete_task <CoinType> (account: &signer, task_id: u64) acquires TaskManager, MintCapStore{
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -164,7 +164,7 @@ module task_management::task {
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
         assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
         assert!(
-            exists<MintCapStore>(account_addr),
+            exists<MintCapStore<CoinType>>(account_addr),
             error::not_found(ENOT_CAPABILITIES),
         );
 
@@ -187,7 +187,7 @@ module task_management::task {
    
         //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
 
-        let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
+        let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
         let coins = coin::mint<CoinType>(total_pgc_reward, mint_cap);
         coin::deposit<CoinType>(signer::address_of(account), coins);
         
