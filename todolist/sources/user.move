@@ -5,6 +5,7 @@ module petz_user::user {
     use aptos_std::table::{Self, Table};
     use aptos_std::event::{Self, EventHandle};
     use aptos_std::timestamp;
+    use aptos_std::option::{Self, Option}; // Import the Option type
 
     /// Error codes
     const EUSER_NOT_FOUND: u64 = 0;
@@ -35,6 +36,17 @@ module petz_user::user {
         profile: UserProfile,
         login_history: Table<u64, LoginHistory>,
         login_history_events: EventHandle<LoginHistory>,
+    }
+
+    /// NFT struct
+    struct NFT has copy, drop, store {
+        collection_id: u64,
+        token_id: u64,
+    }
+
+    /// NFT collection struct
+    struct NFTCollection has key {
+        selected_nft: Option<NFT>,
     }
 
     /// Initialize user data struct
@@ -122,6 +134,24 @@ module petz_user::user {
         assert!(energy.energy >= energy_to_reduce, error::out_of_range(0));
 
         energy.energy = energy.energy - energy_to_reduce;
+    }
+
+    /// Select an NFT
+    public entry fun select_nft(account: &signer, collection_id: u64, token_id: u64) acquires NFTCollection {
+        let account_addr = signer::address_of(account);
+        if (!exists<NFTCollection>(account_addr)) {
+            move_to(account, NFTCollection { selected_nft: option::none() });
+        };
+
+        let nft_collection = borrow_global_mut<NFTCollection>(account_addr);
+        let nft = NFT { collection_id, token_id };
+        nft_collection.selected_nft = option::some(nft);
+    }
+
+    #[view]
+    public fun get_selected_nft(account_addr: address): Option<NFT> acquires NFTCollection {
+        assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        borrow_global<NFTCollection>(account_addr).selected_nft
     }
 
 }
