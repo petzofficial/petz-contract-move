@@ -111,13 +111,17 @@ module petz_user::user {
         borrow_global<Energy>(account_addr).energy
     }
 
-    public entry fun reduce_energy(account: &signer) acquires Energy {
+    /// Reduce energy based on time spent
+    public entry fun reduce_energy_by_time(account: &signer, duration_seconds: u64) acquires Energy {
         let account_addr = signer::address_of(account);
         assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let energy = borrow_global_mut<Energy>(account_addr);
-        assert!(energy.energy > 0, error::out_of_range(0));
+        let energy_to_reduce = duration_seconds / 60; // 1 energy per minute
 
-        energy.energy = energy.energy - 1;
+        assert!(energy.energy >= energy_to_reduce, error::out_of_range(0));
+
+        energy.energy = energy.energy - energy_to_reduce;
     }
+
 }
