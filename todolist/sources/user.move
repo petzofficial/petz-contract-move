@@ -9,6 +9,7 @@ module petz_user::user {
     /// Error codes
     const EUSER_NOT_FOUND: u64 = 0;
     const EUSER_ALREADY_EXISTS: u64 = 1;
+    const EENERGY_ALREADY_CLAIMED: u64 = 2;
 
     /// User profile struct
     struct UserProfile has key, copy, store {
@@ -21,6 +22,12 @@ module petz_user::user {
     struct LoginHistory has copy, drop, store {
         timestamp: u64,
         ip_address: vector<u8>,
+    }
+
+    /// Energy struct
+    struct Energy has key {
+        energy: u64,
+        last_claimed: u64,
     }
 
     /// User data struct
@@ -45,6 +52,11 @@ module petz_user::user {
             profile,
             login_history: table::new(),
             login_history_events: account::new_event_handle<LoginHistory>(account),
+        });
+
+        move_to(account, Energy {
+            energy: 100,
+            last_claimed: timestamp::now_seconds(),
         });
     }
 
@@ -77,5 +89,35 @@ module petz_user::user {
         borrow_global<UserData>(account_addr).profile
     }
 
+    /// Claim daily energy
+    public entry fun claim_energy(account: &signer) acquires Energy {
+        let account_addr = signer::address_of(account);
+        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
+        let energy = borrow_global_mut<Energy>(account_addr);
+        let current_time = timestamp::now_seconds();
+        let last_claimed = energy.last_claimed;
+        let one_day_seconds = 86400;
+
+        assert!(current_time - last_claimed >= one_day_seconds, error::already_exists(EENERGY_ALREADY_CLAIMED));
+
+        energy.energy = 100;
+        energy.last_claimed = current_time;
+    }
+
+    #[view]
+    public fun get_energy(account_addr: address): u64 acquires Energy {
+        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        borrow_global<Energy>(account_addr).energy
+    }
+
+    public entry fun reduce_energy(account: &signer) acquires Energy {
+        let account_addr = signer::address_of(account);
+        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        let energy = borrow_global_mut<Energy>(account_addr);
+        assert!(energy.energy > 0, error::out_of_range(0));
+
+        energy.energy = energy.energy - 1;
+    }
 }
