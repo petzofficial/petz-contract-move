@@ -62,7 +62,7 @@ module task_management::task {
     struct TaskManager has key {
         tasks: Table<u64, Task>,
         set_task_event: event::EventHandle<Task>,
-        //task_counter: u64
+        task_counter: u64
     }
 
 
@@ -81,20 +81,22 @@ module task_management::task {
             move_to(account, TaskManager { 
                 tasks: table::new(),
                 set_task_event: account::new_event_handle<Task>(account),
-                //task_counter: 0
+                task_counter: 0
             });
-            if (!coin::is_account_registered<CoinType>(account_addr)) {
-                coin::register<CoinType>(account);
-            };
-           // coin::register<PetZSilverCoin>(account);
+          
         };
+        if (!coin::is_account_registered<CoinType>(account_addr)) {
+                coin::register<CoinType>(account);
+        };
+
+          // coin::register<PetZSilverCoin>(account);
        
         //assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&description) <= MAX_DESCRIPTION_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
         assert!(priority >= PRIORITY_LOW && priority <= PRIORITY_HIGH, error::invalid_argument(ETASK_PRIORITY_ERROR));
-        //let task_manager = borrow_global_mut<TaskManager>(account_addr);
-        //let counter = task_manager.task_counter + 1;
+        let task_manager = borrow_global_mut<TaskManager>(account_addr);
+        let counter = task_manager.task_counter + 1;
         let timestamp_seconds = timestamp::now_seconds();
         //let current_time = timestamp_seconds;
         //let timestamp_bytes = timestamp_seconds.to_le_bytes();
@@ -117,18 +119,14 @@ module task_management::task {
             psc_reward: 0
         };
 
-        table::add(
-            &mut borrow_global_mut<TaskManager>(account_addr).tasks,
-            unique_id,
-            new_task,
-        );
+        task_manager.task_counter = counter;
 
-        //task_manager.task_counter = counter;
+        let task_manager_mut = borrow_global_mut<TaskManager>(account_addr);
+        table::add(&mut task_manager_mut.tasks, unique_id, new_task);
 
-        event::emit_event<Task>(
-            &mut borrow_global_mut<TaskManager>(account_addr).set_task_event,
-            new_task,
-        );
+        // Borrow the event handle separately
+        let event_handle_mut = &mut task_manager_mut.set_task_event;
+        event::emit_event<Task>(event_handle_mut, new_task);
     }
 
     /// Update an existing task
