@@ -100,7 +100,7 @@ module task_management::task {
         let timestamp_seconds = timestamp::now_seconds();
         //let current_time = timestamp_seconds;
         //let timestamp_bytes = timestamp_seconds.to_le_bytes();
-        let unique_id = timestamp_seconds;
+        let unique_id = counter;
 
         let new_task = Task {
             task_id: unique_id,
