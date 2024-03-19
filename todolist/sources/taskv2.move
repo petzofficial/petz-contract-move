@@ -52,7 +52,7 @@ module task_management::task {
         cycle_count: u64,
         total_time_spent: u64,
         owner: address,
-        status: u8,
+       // status: u8,
         fee: u64,
         pgc_reward: u64,
         psc_reward: u64
@@ -113,7 +113,7 @@ module task_management::task {
             cycle_count: 0,
             total_time_spent: 0,
             owner: account_addr,
-            status: 0, //0 pending, 1 in-progress, 2 completed
+        //    status: 0, //0 pending, 1 in-progress, 2 completed
             fee: 0,
             pgc_reward: 0,
             psc_reward: 0
@@ -162,13 +162,13 @@ module task_management::task {
 
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
-        assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
+     //   assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
         assert!(
             exists<MintCapStore<CoinType>>(account_addr),
             error::not_found(ENOT_CAPABILITIES),
         );
 
-        task.status = 2;
+    //    task.status = 2;
        
         task.complete_date = timestamp::now_seconds();
 
@@ -202,10 +202,15 @@ module task_management::task {
         let task = table::borrow(&borrow_global<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
 
+        let task_manager = borrow_global_mut<TaskManager>(account_addr);
+        let counter = task_manager.task_counter - 1;
+
         table::remove(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
+
+        task_manager.task_counter = counter;
     }
 
-    #[view]
+/*     #[view]
     public fun get_task(account: &signer, task_id: u64): Task acquires TaskManager {
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
@@ -215,7 +220,7 @@ module task_management::task {
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
 
         *task
-    }
+    } */
 
     #[test_only]
     public fun create_test_task(account: &signer) acquires TaskManager {
