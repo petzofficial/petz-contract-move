@@ -12,6 +12,7 @@ module petz_user::user {
     const EUSER_NOT_FOUND: u64 = 0;
     const EUSER_ALREADY_EXISTS: u64 = 1;
     const EENERGY_ALREADY_CLAIMED: u64 = 2;
+    const EREFERRED_BY_SOMEONE_ELSE: u64 = 3;
 
     /// User profile struct
     struct UserProfile has key, copy, store {
@@ -40,6 +41,12 @@ module petz_user::user {
         login_history_events: EventHandle<LoginHistory>,
     }
 
+    /// User experience struct
+    struct UserExperience has key {
+        experience: u64,
+        level: u64,
+    }
+
     /// NFT struct
     struct NFT has copy, drop, store {
         collection_id: u64,
@@ -49,6 +56,16 @@ module petz_user::user {
     /// NFT collection struct
     struct NFTCollection has key {
         selected_nft: Option<NFT>,
+    }
+
+    /// Referral reward struct
+    struct ReferralReward has key {
+        referrer: Option<address>,
+        referrals: Table<address, bool>,
+        energy_reward: u64,
+        experience_reward: u64,
+        pgc_reward: u64,
+        psc_reward: u64
     }
 
     /// Sign up for user data struct
@@ -72,6 +89,20 @@ module petz_user::user {
         move_to(account, Energy {
             energy: 100,
             last_claimed: timestamp::now_seconds(),
+        });
+
+        move_to(account, UserExperience {
+            experience: 0,
+            level: 1,
+        });
+
+        move_to(account, ReferralReward {
+            referrer: option::none(),
+            referrals: table::new(),
+            energy_reward: 0,
+            experience_reward: 0,
+            pgc_reward: 0,
+            psc_reward: 0
         });
     }
 
@@ -156,6 +187,63 @@ module petz_user::user {
     public fun get_selected_nft(account_addr: address): Option<NFT> acquires NFTCollection {
         assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<NFTCollection>(account_addr).selected_nft
+    }
+
+    /// Gain experience
+    public entry fun gain_experience(account: &signer, experience_points: u64) acquires UserExperience {
+        let account_addr = signer::address_of(account);
+        assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        let user_experience = borrow_global_mut<UserExperience>(account_addr);
+        user_experience.experience = user_experience.experience + experience_points;
+
+        // Check if the user has leveled up
+        let new_level = user_experience.level;
+        while (user_experience.experience >= 100 * new_level) {
+            user_experience.experience = user_experience.experience - (100 * new_level);
+            new_level = new_level + 1;
+        };
+        user_experience.level = new_level;
+    }
+
+    #[view]
+    public fun get_user_experience(account_addr: address): (u64, u64) acquires UserExperience {
+        assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        let user_experience = borrow_global<UserExperience>(account_addr);
+        (user_experience.experience, user_experience.level)
+    }
+
+    /// Set referrer
+    public entry fun set_referrer(account: &signer, referrer_addr: address) acquires ReferralReward {
+        let account_addr = signer::address_of(account);
+        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
+        referral_reward.referrer = option::some(referrer_addr);
+    }
+
+    /// Refer a new user
+    public entry fun refer_user(account: &signer, new_user_addr: address) acquires ReferralReward, Energy, UserExperience {
+        let account_addr = signer::address_of(account);
+        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
+        assert!(option::is_none(&referral_reward.referrer), error::invalid_state(EREFERRED_BY_SOMEONE_ELSE));
+
+        table::add(&mut referral_reward.referrals, new_user_addr, true);
+
+        // Award energy and experience rewards
+        let energy = borrow_global_mut<Energy>(account_addr);
+        energy.energy = energy.energy + referral_reward.energy_reward;
+
+        let user_experience = borrow_global_mut<UserExperience>(account_addr);
+        gain_experience(account, referral_reward.experience_reward);
+    }
+
+    #[view]
+    public fun get_referrer(account_addr: address): Option<address> acquires ReferralReward {
+        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        borrow_global<ReferralReward>(account_addr).referrer
     }
 
 }
