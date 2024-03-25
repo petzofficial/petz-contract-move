@@ -202,10 +202,10 @@ module task_management::task {
         let task = table::borrow(&borrow_global<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
 
+        table::remove(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
+
         let task_manager = borrow_global_mut<TaskManager>(account_addr);
         let counter = task_manager.task_counter - 1;
-
-        table::remove(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
 
         task_manager.task_counter = counter;
     }

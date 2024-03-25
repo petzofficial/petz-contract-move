@@ -6,6 +6,7 @@ module petz_user::user {
     use aptos_std::event::{Self, EventHandle};
     use aptos_std::timestamp;
     use aptos_std::option::{Self, Option}; // Import the Option type
+    use std::string::String;
 
     /// Error codes
     const EUSER_NOT_FOUND: u64 = 0;
@@ -14,8 +15,9 @@ module petz_user::user {
 
     /// User profile struct
     struct UserProfile has key, copy, store {
-        name: vector<u8>,
-        email: vector<u8>,
+        name: String,
+        email: String,
+        username: String,
         created_at: u64,
     }
 
@@ -49,14 +51,15 @@ module petz_user::user {
         selected_nft: Option<NFT>,
     }
 
-    /// Initialize user data struct
-    public entry fun initialize(account: &signer) {
+    /// Sign up for user data struct
+    public entry fun signup(account: &signer, name: String, email: String, username: String) {
         let account_addr = signer::address_of(account);
         assert!(!exists<UserData>(account_addr), error::already_exists(EUSER_ALREADY_EXISTS));
 
         let profile = UserProfile {
-            name: b"",
-            email: b"",
+            name,
+            email,
+            username,
             created_at: timestamp::now_seconds(),
         };
 
@@ -73,13 +76,14 @@ module petz_user::user {
     }
 
     /// Update user profile
-    public entry fun update_profile(account: &signer, name: vector<u8>, email: vector<u8>) acquires UserData {
+    public entry fun update_profile(account: &signer, name: String, email: String, username: String) acquires UserData {
         let account_addr = signer::address_of(account);
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let user_data = borrow_global_mut<UserData>(account_addr);
         user_data.profile.name = name;
         user_data.profile.email = email;
+        user_data.profile.username = username;
     }
 
     /// Record login history
