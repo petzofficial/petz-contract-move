@@ -236,7 +236,7 @@ module petz_user::user {
         let energy = borrow_global_mut<Energy>(account_addr);
         energy.energy = energy.energy + referral_reward.energy_reward;
 
-        let user_experience = borrow_global_mut<UserExperience>(account_addr);
+        //let user_experience = borrow_global_mut<UserExperience>(account_addr);
         gain_experience(account, referral_reward.experience_reward);
     }
 

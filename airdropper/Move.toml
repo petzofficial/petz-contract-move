@@ -10,8 +10,8 @@ aptos_framework = "0x1"
 aptos_token="0x3"
 
 [dependencies]
-MoveStdlib = { local = "../../../aptos-core/aptos-move/framework/move-stdlib/" }
-AptosFramework = { local = "../../../aptos-core/aptos-move/framework/aptos-framework" }
-AptosToken = { local = "../../../aptos-core/aptos-move/framework/aptos-token/" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
+MoveStdlib  = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/move-stdlib/", rev = "main" }
+AptosToken = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-token/", rev = "main" }
 # MoveStdlib = { local = "/Users/liaohua/aptos-core/aptos-move/framework/move-stdlib" }
 # AptosFramework = { local = "/Users/liaohua/aptos-core/aptos-move/framework/aptos-framework" }
