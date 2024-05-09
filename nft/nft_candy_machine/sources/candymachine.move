@@ -1,4 +1,4 @@
-module candymachinev2::candymachine{
+module candymachinev2::petz_candymachine{
     use std::signer;
     use std::bcs;
     use std::hash;
@@ -33,7 +33,7 @@ module candymachinev2::candymachine{
     const MINT_LIMIT_EXCEED: u64 = 9;
     const INVALID_PROOF:u64 = 10;
     const WhitelistMintNotEnabled: u64 = 11;
-    const AdminFee: address = @0x8cb5e9980ab5dc8abc45edcfac0e46cdcbead3e7ec9661a4a464fa7091c5f77a;
+    const AdminFee: address = @0x3ee4f7db342b58b4d3523df10f8f523ab922298f064dad6f97a2493ca8a691de;
 
     struct MintData has key {
         total_mints: u64,
