@@ -34,7 +34,7 @@ module petz_gold_coin::petz_gold_coin {
         admin: address
     }
     
-    public entry fun initialize(petz_admin: &signer) {
+    public entry fun initialize(petz_admin: &signer) acquires CapStore{
         assert!(signer::address_of(petz_admin) == @petz_gold_coin, error::permission_denied(ENOT_ADMIN));
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize<PetZGoldCoin>(
@@ -56,6 +56,12 @@ module petz_gold_coin::petz_gold_coin {
         move_to(petz_admin, Delegations<FreezeCapability<PetZGoldCoin>>{ inner: vector::empty<DelegatedCapability<FreezeCapability<PetZGoldCoin>>>() });
         move_to(petz_admin, Delegations<MintCapability<PetZGoldCoin>>{ inner: vector::empty<DelegatedCapability<MintCapability<PetZGoldCoin>>>() });
         move_to(petz_admin, AdminStore{ admin: @petz_gold_coin });
+
+         // Mint 1 coin
+        let mint_cap_store = borrow_global<CapStore<MintCapability<PetZGoldCoin>>>(@petz_gold_coin);
+        let mint_cap = &mint_cap_store.cap;
+        let coins_minted = coin::mint<PetZGoldCoin>(1, mint_cap);
+        coin::deposit<PetZGoldCoin>(signer::address_of(petz_admin), coins_minted);
 
     }
 
