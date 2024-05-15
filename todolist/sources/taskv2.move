@@ -154,6 +154,25 @@ module task_management::task {
         task.priority = priority;
     }
 
+    /// test mint
+    public entry fun test_mint <CoinType> (account: &signer) acquires  MintCapStore{
+        let account_addr = signer::address_of(account);
+       
+        assert!(
+            exists<MintCapStore<CoinType>>(account_addr),
+            error::not_found(ENOT_CAPABILITIES),
+        );
+
+       // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
+   
+        //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
+
+        let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
+        let coins = coin::mint<CoinType>(999, mint_cap);
+        coin::deposit<CoinType>(signer::address_of(account), coins);
+        
+    }
+
     /// Complete a task and receive rewards
     public entry fun complete_task <CoinType> (account: &signer, task_id: u64) acquires TaskManager, MintCapStore{
         let account_addr = signer::address_of(account);
