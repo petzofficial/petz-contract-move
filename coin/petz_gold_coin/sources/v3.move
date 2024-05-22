@@ -7,15 +7,12 @@ module petz_gold_coin::petz_gold_coin {
     use std::vector;
     use aptos_framework::coin::{Coin, BurnCapability, FreezeCapability, MintCapability, Self};
 
-    const MAX_SUPPLY: u128 = 50000000000000000; // 500 million PGC
     const ENO_CAPABILITIES: u64 = 1;
     const EALREADY_HAVE_CAP: u64 = 2;
     const EALREADY_DELEGATED: u64 = 3;
     const EDELEGATION_NOT_FOUND: u64 = 4;
     const ENOT_ADMIN: u64 = 5;
     const ENOT_ADMIN_NOR_SELF: u64 = 6;
-    const ERR_EXCEED_MAX_SUPPLY: u64 = 7;
-
 
     struct PetZGoldCoin has key, store { }
 
@@ -57,10 +54,10 @@ module petz_gold_coin::petz_gold_coin {
         move_to(petz_admin, Delegations<MintCapability<PetZGoldCoin>>{ inner: vector::empty<DelegatedCapability<MintCapability<PetZGoldCoin>>>() });
         move_to(petz_admin, AdminStore{ admin: @petz_gold_coin });
 
-         // Mint 1 coin
+         // Mint 100 million coin
         let mint_cap_store = borrow_global<CapStore<MintCapability<PetZGoldCoin>>>(@petz_gold_coin);
         let mint_cap = &mint_cap_store.cap;
-        let coins_minted = coin::mint<PetZGoldCoin>(1, mint_cap);
+        let coins_minted = coin::mint<PetZGoldCoin>(10000000000000000, mint_cap);
         coin::deposit<PetZGoldCoin>(signer::address_of(petz_admin), coins_minted);
 
     }
@@ -216,7 +213,6 @@ module petz_gold_coin::petz_gold_coin {
     ) acquires CapStore {
         let account_addr = signer::address_of(account);
         assert!(exists<CapStore<MintCapability<PetZGoldCoin>>>(account_addr), error::not_found(ENO_CAPABILITIES));
-        assert!(*option::borrow(&coin::supply<PetZGoldCoin>()) + (amount as u128) <= MAX_SUPPLY, ERR_EXCEED_MAX_SUPPLY);
 
         let mint_cap = &borrow_global<CapStore<MintCapability<PetZGoldCoin>>>(account_addr).cap;
         let coins_minted = coin::mint<PetZGoldCoin>(amount, mint_cap);
