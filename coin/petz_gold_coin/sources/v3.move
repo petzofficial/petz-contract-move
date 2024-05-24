@@ -61,33 +61,29 @@ module petz_gold_coin::petz_gold_coin {
 
     }
 
-    // delegate capabilities
     public entry fun change_admin(admin: &signer, new_admin: address) acquires AdminStore {
         only_admin(admin);
-
-        // Revoke capabilities from old admin
-        let old_admin_address = signer::address_of(admin);
-        revoke_mint_capability(admin, old_admin_address);
-        revoke_burn_capability(admin, old_admin_address);
-        revoke_freeze_capability(admin, old_admin_address);
-
-        // Update the admin address
         borrow_global_mut<AdminStore>(@petz_gold_coin).admin = new_admin;
     }
 
-    public entry fun delegate_all_capabilities(admin: &signer, new_admin_address: address) acquires AdminStore,  Delegations {
-        delegate_capability<MintCapability<PetZGoldCoin>>(admin, new_admin_address);
-        delegate_capability<BurnCapability<PetZGoldCoin>>(admin, new_admin_address);
-        delegate_capability<FreezeCapability<PetZGoldCoin>>(admin, new_admin_address);
+    public entry fun delegate_all_capabilities(admin: &signer, to: address) acquires AdminStore,  Delegations {
+        delegate_capability<MintCapability<PetZGoldCoin>>(admin, to);
+        delegate_capability<BurnCapability<PetZGoldCoin>>(admin, to);
+        delegate_capability<FreezeCapability<PetZGoldCoin>>(admin, to);
     }
 
-    public entry fun claim_all_capabilities(admin: &signer) acquires CapStore, Delegations {
-        claim_capability<MintCapability<PetZGoldCoin>>(admin);
-        claim_capability<BurnCapability<PetZGoldCoin>>(admin);
-        claim_capability<FreezeCapability<PetZGoldCoin>>(admin);
+    public entry fun claim_all_capabilities(account: &signer) acquires CapStore, Delegations {
+        claim_capability<MintCapability<PetZGoldCoin>>(account);
+        claim_capability<BurnCapability<PetZGoldCoin>>(account);
+        claim_capability<FreezeCapability<PetZGoldCoin>>(account);
     }
 
- 
+    public entry fun revoke_all_capabilities(admin: &signer, to: address) acquires AdminStore {
+        revoke_mint_capability(admin, to);
+        revoke_burn_capability(admin, to);
+        revoke_freeze_capability(admin, to);
+    }
+
 
     public entry fun delegate_capability<CapType>(admin: &signer, to: address) acquires AdminStore, Delegations {
         only_admin(admin);
