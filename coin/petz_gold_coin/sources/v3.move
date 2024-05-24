@@ -78,7 +78,7 @@ module petz_gold_coin::petz_gold_coin {
         claim_capability<FreezeCapability<PetZGoldCoin>>(account);
     }
 
-    public entry fun revoke_all_capabilities(admin: &signer, to: address) acquires AdminStore {
+    public entry fun revoke_all_capabilities(admin: &signer, to: address) acquires CapStore, AdminStore {
         revoke_mint_capability(admin, to);
         revoke_burn_capability(admin, to);
         revoke_freeze_capability(admin, to);
