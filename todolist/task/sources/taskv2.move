@@ -39,6 +39,10 @@ module task_management::task {
         mint_cap: MintCapability<CoinType>,
     }
 
+    struct CapStore<CapType: store + copy> has key, store {
+        cap: CapType,
+    }
+
 
     /// Task struct
     struct Task has copy, drop, store {
@@ -155,19 +159,16 @@ module task_management::task {
     }
 
     /// test mint
-    public entry fun test_mint <CoinType> (account: &signer) acquires  MintCapStore{
+    public entry fun test_mint <CoinType> (account: &signer) acquires CapStore{
         let account_addr = signer::address_of(account);
        
-        assert!(
-            exists<MintCapStore<CoinType>>(account_addr),
-            error::not_found(ENOT_CAPABILITIES),
-        );
+        //assert!(exists<CapStore<MintCapability<CoinType>>>(account_addr), error::not_found(ENOT_CAPABILITIES));
 
        // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
    
         //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
 
-        let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
+        let mint_cap = &borrow_global<CapStore<MintCapability<CoinType>>>(account_addr).cap;
         let coins = coin::mint<CoinType>(999, mint_cap);
         coin::deposit<CoinType>(signer::address_of(account), coins);
         

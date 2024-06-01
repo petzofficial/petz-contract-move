@@ -21,7 +21,7 @@ module petz_user::user {
         username: String,
         created_at: u64,
         profile_image_url: Option<String>,
-        invitation_code: Option<String>,
+   //     invitation_code: Option<String>,
     }
 
 
@@ -82,7 +82,7 @@ module petz_user::user {
             username,
             created_at: timestamp::now_seconds(),
             profile_image_url: option::none(),
-            invitation_code,
+    //        invitation_code,
         };
 
         move_to(account, UserData {
@@ -251,10 +251,10 @@ module petz_user::user {
         borrow_global<ReferralReward>(account_addr).referrer
     }
     
-    #[view]
+/*     #[view]
     public fun get_invitation_code(account_addr: address): Option<String> acquires UserData {
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<UserData>(account_addr).profile.invitation_code
-    }
+    } */
 
 }

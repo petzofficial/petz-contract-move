@@ -3,7 +3,7 @@ name = "PetZ User"
 version = "0.0.0"
 
 [addresses]
-petz_user = "0x8cb5e9980ab5dc8abc45edcfac0e46cdcbead3e7ec9661a4a464fa7091c5f77a"
+petz_user = "0x27c4e7e42b0fc7708264330cc5b9c10cef6216b3f68cf417c19eb1264c6721f"
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "testnet" }

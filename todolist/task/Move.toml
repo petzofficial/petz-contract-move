@@ -8,4 +8,4 @@ rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 
 [addresses]
-task_management='_'
+task_management='0x27c4e7e42b0fc7708264330cc5b9c10cef6216b3f68cf417c19eb1264c6721f'

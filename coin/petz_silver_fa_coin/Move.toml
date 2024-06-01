@@ -4,7 +4,7 @@ version = "0.0.0"
 
 [addresses]
 aptos_framework = "0x1"
-FACoin = "_"
+FACoin = "0x82afe3de6e9acaf4f2de72ae50c3851a65bb86576198ef969937d59190873dfd"
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "main" }
