@@ -1,0 +1,12 @@
+[package]
+name = 'token-vesting'
+version = '1.0.0'
+
+
+[addresses]
+token_vesting = "_"
+Std = "0x1"
+aptos_std = "0x1"
+
+[dependencies]
+AptosFramework = { local = "../../aptos-core/aptos-move/framework/aptos-framework"}
