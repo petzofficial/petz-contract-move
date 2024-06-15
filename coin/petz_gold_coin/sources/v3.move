@@ -56,7 +56,7 @@ module petz_gold_coin::petz_gold_coin {
 
         let mint_cap_store = borrow_global<CapStore<MintCapability<PetZGoldCoin>>>(@petz_gold_coin);
         let mint_cap = &mint_cap_store.cap;
-        let coins_minted = coin::mint<PetZGoldCoin>(2000000000000000, mint_cap);
+        let coins_minted = coin::mint<PetZGoldCoin>(5000000000000000, mint_cap);
         coin::deposit<PetZGoldCoin>(signer::address_of(petz_admin), coins_minted);
 
     }
