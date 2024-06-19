@@ -52,8 +52,8 @@ module petz_user::user {
 
     /// NFT struct
     struct NFT has copy, drop, store {
-        collection_id: u64,
-        token_id: u64,
+        collection_id: address,
+        token_id: address,
     }
 
     /// NFT collection struct
@@ -177,7 +177,7 @@ module petz_user::user {
     }
 
     /// Select an NFT
-    public entry fun select_nft(account: &signer, collection_id: u64, token_id: u64) acquires NFTCollection {
+    public entry fun select_nft(account: &signer, collection_id: address, token_id: address) acquires NFTCollection {
         let account_addr = signer::address_of(account);
         if (!exists<NFTCollection>(account_addr)) {
             move_to(account, NFTCollection { selected_nft: option::none() });
