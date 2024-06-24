@@ -9,7 +9,7 @@ module task_management::task {
    // use task_management::petz_gold_coin;
     
     //use std::hash;
-    use aptos_framework::coin::{Self, MintCapability};
+    use aptos_framework::coin::{Self, Coin, MintCapability};
 
     /// Error codes
     const ETASK_PRIORITY_ERROR: u64 = 0;
@@ -68,6 +68,12 @@ module task_management::task {
         set_task_event: event::EventHandle<Task>,
         task_counter: u64
     }
+
+  
+    struct Pool<phantom R> has key {
+        reward_coins: Coin<R>,
+    }
+
 
 
     public entry fun add_task <CoinType> (
@@ -164,7 +170,7 @@ module task_management::task {
        
         //assert!(exists<CapStore<MintCapability<CoinType>>>(account_addr), error::not_found(ENOT_CAPABILITIES));
 
-       // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
+        // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
    
         //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
 
@@ -172,6 +178,49 @@ module task_management::task {
         let coins = coin::mint<CoinType>(999, mint_cap);
         coin::deposit<CoinType>(signer::address_of(account), coins);
         
+    }
+
+
+    public entry fun withdraw_reward<R>(treasury: &signer, pool_addr: address, amount: u64) acquires Pool {
+       //  assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
+       // assert!(signer::address_of(treasury) == stake_config::get_treasury_admin_address(), ERR_NOT_TREASURY);
+        let treasury_addr = signer::address_of(treasury);
+
+        let pool = borrow_global_mut<Pool<R>>(pool_addr);
+        let rewards = coin::extract(&mut pool.reward_coins, amount);
+        coin::deposit(treasury_addr, rewards);
+    }
+
+    public entry fun deposit_reward_coins<R>(depositor: &signer, pool_addr: address, reward_amount: u64) acquires Pool {
+        //assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
+        let reward_coins = coin::withdraw<R>(depositor, reward_amount);
+        let pool = borrow_global_mut<Pool<R>>(pool_addr);
+        //assert!(!is_emergency_inner(pool), ERR_EMERGENCY);
+
+        // it's forbidden to deposit more rewards (extend pool duration) after previous pool duration passed
+        // preventing unfair reward distribution
+        //assert!(!is_finished_inner(pool), ERR_HARVEST_FINISHED);
+
+        //let amount = coin::value(&coins);
+        //assert!(amount > 0, ERR_AMOUNT_CANNOT_BE_ZERO);
+
+        //let additional_duration = amount / pool.reward_per_sec;
+        //assert!(additional_duration > 0, ERR_DURATION_CANNOT_BE_ZERO);
+
+        //pool.end_timestamp = pool.end_timestamp + additional_duration;
+
+        coin::merge(&mut pool.reward_coins, reward_coins);
+
+       
+    }
+
+    public entry fun register_pool<R>(pool_owner: &signer, reward_amount: u64) {
+        let reward_coins = coin::withdraw<R>(pool_owner, reward_amount);
+
+        let pool = Pool<R> {        
+            reward_coins,
+        };
+        move_to(pool_owner, pool);
     }
 
     /// Complete a task and receive rewards
@@ -271,6 +320,7 @@ module task_management::task {
         task.cycle_count = task.cycle_count + 1;
         task.total_time_spent = task.total_time_spent + cycle_duration;
     }
+
 
     // Coin for rewards
     //struct PetZGoldCoin {}
