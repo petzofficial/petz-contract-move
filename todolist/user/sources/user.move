@@ -19,6 +19,12 @@ module petz_user::user {
         name: String,
         email: String,
         username: String,
+        phone: Option<String>,
+        birthday: Option<String>,
+        gender: Option<String>,
+        bio: Option<String>,
+        social: Option<String>,
+        location: Option<String>,
         created_at: u64,
         profile_image_url: Option<String>,
    //     invitation_code: Option<String>,
@@ -80,6 +86,12 @@ module petz_user::user {
             name,
             email,
             username,
+            phone: option::none(),
+            birthday: option::none(),
+            gender: option::none(),
+            bio: option::none(),
+            social: option::none(),
+            location: option::none(),
             created_at: timestamp::now_seconds(),
             profile_image_url: option::none(),
     //        invitation_code,
@@ -112,7 +124,18 @@ module petz_user::user {
     }
 
     /// Update user profile
-    public entry fun update_profile(account: &signer, name: String, email: String, username: String) acquires UserData {
+    public entry fun update_profile(
+        account: &signer, 
+        name: String, 
+        email: String, 
+        username: String,  
+        phone: Option<String>,
+        birthday: Option<String>,
+        gender: Option<String>,
+        bio: Option<String>,
+        social: Option<String>,
+        location: Option<String>
+		profile_image_url: Option<String>) acquires UserData {
         let account_addr = signer::address_of(account);
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
@@ -120,6 +143,13 @@ module petz_user::user {
         user_data.profile.name = name;
         user_data.profile.email = email;
         user_data.profile.username = username;
+        user_data.profile.phone = phone;
+        user_data.profile.birthday = birthday;
+        user_data.profile.gender = gender;
+        user_data.profile.bio = bio;
+        user_data.profile.social = social;
+        user_data.profile.location = location;
+		user_data.profile.profile_image_url = profile_image_url;
     }
 
     /// Record login history
