@@ -23,6 +23,7 @@ module petz_user::user {
         birthday: Option<String>,
         gender: Option<String>,
         bio: Option<String>,
+        user_addr: Option<String>,
         social: Option<String>,
         location: Option<String>,
         created_at: u64,
@@ -35,6 +36,7 @@ module petz_user::user {
     struct LoginHistory has copy, drop, store {
         timestamp: u64,
         ip_address: vector<u8>,
+        device: String
     }
 
     /// Energy struct
@@ -90,6 +92,7 @@ module petz_user::user {
             birthday: option::none(),
             gender: option::none(),
             bio: option::none(),
+            user_addr: option::none(),
             social: option::none(),
             location: option::none(),
             created_at: timestamp::now_seconds(),
@@ -133,8 +136,9 @@ module petz_user::user {
         birthday: Option<String>,
         gender: Option<String>,
         bio: Option<String>,
+        user_addr: Option<String>,
         social: Option<String>,
-        location: Option<String>
+        location: Option<String>,
 		profile_image_url: Option<String>) acquires UserData {
         let account_addr = signer::address_of(account);
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
@@ -147,19 +151,20 @@ module petz_user::user {
         user_data.profile.birthday = birthday;
         user_data.profile.gender = gender;
         user_data.profile.bio = bio;
+        user_data.profile.user_addr = user_addr;
         user_data.profile.social = social;
         user_data.profile.location = location;
 		user_data.profile.profile_image_url = profile_image_url;
     }
 
     /// Record login history
-    public entry fun record_login(account: &signer, ip_address: vector<u8>) acquires UserData {
+    public entry fun record_login(account: &signer, ip_address: vector<u8>, device: String) acquires UserData {
         let account_addr = signer::address_of(account);
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let user_data = borrow_global_mut<UserData>(account_addr);
         let timestamp = timestamp::now_seconds();
-        let login_history_entry = LoginHistory { timestamp, ip_address };
+        let login_history_entry = LoginHistory { timestamp, ip_address, device };
 
         table::add(&mut user_data.login_history, timestamp, login_history_entry);
         event::emit_event(&mut user_data.login_history_events, login_history_entry);
@@ -258,14 +263,14 @@ module petz_user::user {
     }
 
     /// Refer a new user
-    public entry fun refer_user(account: &signer, new_user_addr: address) acquires ReferralReward, Energy, UserExperience {
+    public entry fun refer_user(account: &signer, new_acc_addr: address) acquires ReferralReward, Energy, UserExperience {
         let account_addr = signer::address_of(account);
         assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
         assert!(option::is_none(&referral_reward.referrer), error::invalid_state(EREFERRED_BY_SOMEONE_ELSE));
 
-        table::add(&mut referral_reward.referrals, new_user_addr, true);
+        table::add(&mut referral_reward.referrals, new_acc_addr, true);
 
         // Award energy and experience rewards
         let energy = borrow_global_mut<Energy>(account_addr);

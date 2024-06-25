@@ -56,7 +56,7 @@ module task_management::task {
         cycle_count: u64,
         total_time_spent: u64,
         owner: address,
-       // status: u8,
+        status: u8,
         fee: u64,
         pgc_reward: u64,
         psc_reward: u64
@@ -81,7 +81,6 @@ module task_management::task {
 //        task_id: u64,
         task_name: String,
         description: String,
-//        create_date: u64,
         due_date: u64,
         priority: u8,
     ) acquires TaskManager {
@@ -123,7 +122,7 @@ module task_management::task {
             cycle_count: 0,
             total_time_spent: 0,
             owner: account_addr,
-        //    status: 0, //0 pending, 1 in-progress, 2 completed
+            status: 0, //0 pending, 1 in-progress, 2 completed
             fee: 0,
             pgc_reward: 0,
             psc_reward: 0
@@ -183,7 +182,7 @@ module task_management::task {
 
     public entry fun withdraw_reward<R>(treasury: &signer, pool_addr: address, amount: u64) acquires Pool {
        //  assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
-       // assert!(signer::address_of(treasury) == stake_config::get_treasury_admin_address(), ERR_NOT_TREASURY);
+      
         let treasury_addr = signer::address_of(treasury);
 
         let pool = borrow_global_mut<Pool<R>>(pool_addr);
@@ -195,22 +194,11 @@ module task_management::task {
         //assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
         let reward_coins = coin::withdraw<R>(depositor, reward_amount);
         let pool = borrow_global_mut<Pool<R>>(pool_addr);
-        //assert!(!is_emergency_inner(pool), ERR_EMERGENCY);
-
-        // it's forbidden to deposit more rewards (extend pool duration) after previous pool duration passed
-        // preventing unfair reward distribution
-        //assert!(!is_finished_inner(pool), ERR_HARVEST_FINISHED);
 
         //let amount = coin::value(&coins);
         //assert!(amount > 0, ERR_AMOUNT_CANNOT_BE_ZERO);
 
-        //let additional_duration = amount / pool.reward_per_sec;
-        //assert!(additional_duration > 0, ERR_DURATION_CANNOT_BE_ZERO);
-
-        //pool.end_timestamp = pool.end_timestamp + additional_duration;
-
         coin::merge(&mut pool.reward_coins, reward_coins);
-
        
     }
 
@@ -237,7 +225,7 @@ module task_management::task {
             error::not_found(ENOT_CAPABILITIES),
         );
 
-    //    task.status = 2;
+        task.status = 2;
        
         task.complete_date = timestamp::now_seconds();
 
