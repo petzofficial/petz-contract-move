@@ -28,6 +28,17 @@ module task_management::task {
     const PRIORITY_MEDIUM: u8 = 2;
     const PRIORITY_HIGH: u8 = 3;
 
+    /// Pool does not exist.
+    const ERR_NO_POOL: u64 = 100;
+
+    /// Pool already exists.
+    const ERR_POOL_ALREADY_EXISTS: u64 = 101;
+
+    /// When not treasury withdrawing.
+    const ERR_NOT_TREASURY: u64 = 115;
+
+    const ADMIN_ADDR: address = @0x3ee4f7db342b58b4d3523df10f8f523ab922298f064dad6f97a2493ca8a691de;
+
     /// Maximum length for task name and description
     //const MAX_TASK_NAME_LENGTH: u64 = 100;
     //const MAX_DESCRIPTION_LENGTH: u64 = 500;
@@ -164,8 +175,8 @@ module task_management::task {
     }
 
     /// test mint
-    public entry fun test_mint <CoinType> (account: &signer) acquires CapStore{
-        let account_addr = signer::address_of(account);
+    //public entry fun test_mint <CoinType> (account: &signer) acquires CapStore{
+    //    let account_addr = signer::address_of(account);
        
         //assert!(exists<CapStore<MintCapability<CoinType>>>(account_addr), error::not_found(ENOT_CAPABILITIES));
 
@@ -173,16 +184,16 @@ module task_management::task {
    
         //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
 
-        let mint_cap = &borrow_global<CapStore<MintCapability<CoinType>>>(account_addr).cap;
-        let coins = coin::mint<CoinType>(999, mint_cap);
-        coin::deposit<CoinType>(signer::address_of(account), coins);
+    //    let mint_cap = &borrow_global<CapStore<MintCapability<CoinType>>>(account_addr).cap;
+    //    let coins = coin::mint<CoinType>(999, mint_cap);
+   //     coin::deposit<CoinType>(signer::address_of(account), coins);
         
-    }
+   // }
 
 
-    public entry fun withdraw_reward<R>(treasury: &signer, pool_addr: address, amount: u64) acquires Pool {
-       //  assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
-      
+    public entry fun withdraw_reward_coins<R>(treasury: &signer, pool_addr: address, amount: u64) acquires Pool {
+        assert!(exists<Pool<R>>(pool_addr), ERR_NO_POOL);
+        assert!(signer::address_of(treasury) == ADMIN_ADDR, ERR_NOT_TREASURY);
         let treasury_addr = signer::address_of(treasury);
 
         let pool = borrow_global_mut<Pool<R>>(pool_addr);
@@ -191,7 +202,7 @@ module task_management::task {
     }
 
     public entry fun deposit_reward_coins<R>(depositor: &signer, pool_addr: address, reward_amount: u64) acquires Pool {
-        //assert!(exists<StakePool<S, R>>(pool_addr), ERR_NO_POOL);
+        assert!(exists<Pool<R>>(pool_addr), ERR_NO_POOL);
         let reward_coins = coin::withdraw<R>(depositor, reward_amount);
         let pool = borrow_global_mut<Pool<R>>(pool_addr);
 
@@ -212,7 +223,7 @@ module task_management::task {
     }
 
     /// Complete a task and receive rewards
-    public entry fun complete_task <CoinType> (account: &signer, task_id: u64) acquires TaskManager, MintCapStore{
+    public entry fun complete_task <R> (account: &signer, task_id: u64, pool_addr: address) acquires TaskManager, Pool{
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
         assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
@@ -220,10 +231,10 @@ module task_management::task {
         let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
      //   assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
-        assert!(
-            exists<MintCapStore<CoinType>>(account_addr),
-            error::not_found(ENOT_CAPABILITIES),
-        );
+     //   assert!(
+     //       exists<MintCapStore<CoinType>>(account_addr),
+     //       error::not_found(ENOT_CAPABILITIES),
+     //   );
 
         task.status = 2;
        
@@ -244,9 +255,12 @@ module task_management::task {
    
         //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
 
-        let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
-        let coins = coin::mint<CoinType>(total_pgc_reward, mint_cap);
-        coin::deposit<CoinType>(signer::address_of(account), coins);
+//let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
+  //      let coins = coin::mint<CoinType>(total_pgc_reward, mint_cap);
+    //    coin::deposit<CoinType>(signer::address_of(account), coins);
+        let pool = borrow_global_mut<Pool<R>>(pool_addr);
+        let rewards = coin::extract(&mut pool.reward_coins, 1);
+        coin::deposit(account_addr, rewards);
         
     }
 
