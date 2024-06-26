@@ -25,18 +25,18 @@ module petz_user::user {
 
     /// User profile struct
     struct UserProfile has key, copy, store {
-        name: Option<String>,
+        name: String,
         email: String,
         username: String,
-        phone: Option<String>,
-        birthday: Option<String>,
-        gender: Option<String>,
-        bio: Option<String>,
-        user_addr: Option<String>,
-        social: Option<String>,
-        location: Option<String>,
+        phone: String,
+        birthday: String,
+        gender: String,
+        bio: String,
+        user_addr: String,
+        social: String,
+        location: String,
         created_at: u64,
-        profile_image_url: Option<String>,
+        profile_image_url: String,
    //     invitation_code: Option<String>,
     }
 
@@ -89,7 +89,18 @@ module petz_user::user {
     }
 
     /// Sign up for user data struct
-    public entry fun signup(account: &signer, name: Option<String>, email: String, username: String) acquires UserRegistry {
+    public entry fun signup(account: &signer, 
+        name: String, 
+        email: String, 
+        username: String,
+        phone: String,
+        birthday: String,
+        gender: String,
+        bio: String,
+        user_addr: String,
+        social: String,
+        location: String,
+        profile_image_url: String) acquires UserRegistry {
         let account_addr = signer::address_of(account);
 
         // Check if UserRegistry exists, if not, create it
@@ -116,15 +127,15 @@ module petz_user::user {
             name,
             email,
             username,
-            phone: option::none(),
-            birthday: option::none(),
-            gender: option::none(),
-            bio: option::none(),
-            user_addr: option::none(),
-            social: option::none(),
-            location: option::none(),
+            phone,
+            birthday,
+            gender,
+            bio,
+            user_addr,
+            social,
+            location,
             created_at: timestamp::now_seconds(),
-            profile_image_url: option::none(),
+            profile_image_url,
     //        invitation_code,
         };
 
@@ -157,17 +168,17 @@ module petz_user::user {
     /// Update user profile
     public entry fun update_profile(
         account: &signer, 
-        name: Option<String>, 
+        name: String, 
         email: String, 
         username: String,
-        phone: Option<String>,
-        birthday: Option<String>,
-        gender: Option<String>,
-        bio: Option<String>,
-        user_addr: Option<String>,
-        social: Option<String>,
-        location: Option<String>,
-		profile_image_url: Option<String>) acquires UserData, UserRegistry {
+        phone: String,
+        birthday: String,
+        gender: String,
+        bio: String,
+        user_addr: String,
+        social: String,
+        location: String,
+		profile_image_url: String) acquires UserData, UserRegistry {
         let account_addr = signer::address_of(account);
         assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
