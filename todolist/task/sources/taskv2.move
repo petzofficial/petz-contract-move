@@ -18,26 +18,24 @@ module task_management::task {
     /// Account does not have mint capability
     const ENOT_CAPABILITIES: u64 = 3;
     const ETASK_STATUS_ERROR: u64 = 4;
+    /// Pool does not exist.
+    const ERR_NO_POOL: u64 = 5;
+    /// Pool already exists.
+    const ERR_POOL_ALREADY_EXISTS: u64 = 6;
+    /// When not treasury withdrawing.
+    const ERR_NOT_TREASURY: u64 = 7;
+    const ERR_NOT_ADMIN: u64 = 8;
 
     /// Reward parameters
     const DEVELOPER_FEE_PERCENTAGE: u64 = 5; // 5%
-    const REWARD_RATE_PER_SECOND: u64 = 1; // 1 coin per second spent on the task
+    //const REWARD_RATE_PER_SECOND: u64 = 1; // 1 coin per second spent on the task
 
     /// Task priority levels
     const PRIORITY_LOW: u8 = 1;
     const PRIORITY_MEDIUM: u8 = 2;
     const PRIORITY_HIGH: u8 = 3;
 
-    /// Pool does not exist.
-    const ERR_NO_POOL: u64 = 100;
-
-    /// Pool already exists.
-    const ERR_POOL_ALREADY_EXISTS: u64 = 101;
-
-    /// When not treasury withdrawing.
-    const ERR_NOT_TREASURY: u64 = 115;
-
-    const ADMIN_ADDR: address = @0x3ee4f7db342b58b4d3523df10f8f523ab922298f064dad6f97a2493ca8a691de;
+    const ADMIN_ADDR: address = @0x3562227119a7a6190402c7cc0b987d2ff5432445a8bfa90c3a51be9ff29dcbe3;
 
     /// Maximum length for task name and description
     //const MAX_TASK_NAME_LENGTH: u64 = 100;
@@ -77,7 +75,8 @@ module task_management::task {
     struct TaskManager has key {
         tasks: Table<u64, Task>,
         set_task_event: event::EventHandle<Task>,
-        task_counter: u64
+        task_counter: u64,
+        reward_rate_per_second: u64
     }
 
   
@@ -101,7 +100,8 @@ module task_management::task {
             move_to(account, TaskManager { 
                 tasks: table::new(),
                 set_task_event: account::new_event_handle<Task>(account),
-                task_counter: 0
+                task_counter: 0,
+                reward_rate_per_second: 1 // Initialize with 1 coin per second
             });
           
         };
@@ -226,40 +226,30 @@ module task_management::task {
     public entry fun complete_task <R> (account: &signer, task_id: u64, pool_addr: address) acquires TaskManager, Pool{
         let account_addr = signer::address_of(account);
         assert!(exists<TaskManager>(account_addr), error::not_found(ENOT_TASK_OWNER));
-        assert!(table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::not_found(ETASK_NOT_FOUND));
+        
+        let task_manager = borrow_global_mut<TaskManager>(account_addr);
+        assert!(table::contains(&task_manager.tasks, task_id), error::not_found(ETASK_NOT_FOUND));
 
-        let task = table::borrow_mut(&mut borrow_global_mut<TaskManager>(account_addr).tasks, task_id);
+        let task = table::borrow_mut(&mut task_manager.tasks, task_id);
         assert!(task.owner == account_addr, error::permission_denied(ENOT_TASK_OWNER));
-     //   assert!(task.status == 1, error::invalid_argument(ETASK_STATUS_ERROR));
-     //   assert!(
-     //       exists<MintCapStore<CoinType>>(account_addr),
-     //       error::not_found(ENOT_CAPABILITIES),
-     //   );
 
         task.status = 2;
-       
         task.complete_date = timestamp::now_seconds();
 
-        // Calculate and distribute rewards
-        let total_reward = task.total_time_spent * REWARD_RATE_PER_SECOND;
-        let developer_fee_gold = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
-        // let developer_fee_silver : u64 = developer_fee_gold;
-        let total_pgc_reward = total_reward - developer_fee_gold;
-        //let total_psc_reward = total_reward - developer_fee_silver;
+        let reward_rate = task_manager.reward_rate_per_second;
 
+        // Calculate rewards
+        let total_reward = task.total_time_spent * reward_rate;
+        let developer_fee_gold = (total_reward * DEVELOPER_FEE_PERCENTAGE) / 100;
+        let total_pgc_reward = total_reward - developer_fee_gold;
+
+        // Update task rewards
         task.fee = developer_fee_gold;
         task.pgc_reward = total_pgc_reward;
-        //task.psc_reward = total_psc_reward;
 
-       // let mint_cap = &borrow_global<CapStore>(signer::address_of(account)).mint_cap;
-   
-        //coin::transfer<CoinType>(account,account_addr,total_reward - developer_fee_gold);
-
-//let mint_cap = &borrow_global<MintCapStore<CoinType>>(account_addr).mint_cap;
-  //      let coins = coin::mint<CoinType>(total_pgc_reward, mint_cap);
-    //    coin::deposit<CoinType>(signer::address_of(account), coins);
+        // Handle pool operations
         let pool = borrow_global_mut<Pool<R>>(pool_addr);
-        let rewards = coin::extract(&mut pool.reward_coins, 1);
+        let rewards = coin::extract(&mut pool.reward_coins, total_pgc_reward);
         coin::deposit(account_addr, rewards);
         
     }
@@ -279,6 +269,15 @@ module task_management::task {
         let counter = task_manager.task_counter - 1;
 
         task_manager.task_counter = counter;
+    }
+
+    public entry fun update_reward_rate(admin: &signer, new_rate: u64) acquires TaskManager {
+        let admin_addr = signer::address_of(admin);
+        assert!(admin_addr == ADMIN_ADDR, error::permission_denied(ERR_NOT_ADMIN));
+        assert!(exists<TaskManager>(admin_addr), error::not_found(ENOT_TASK_OWNER));
+
+        let task_manager = borrow_global_mut<TaskManager>(admin_addr);
+        task_manager.reward_rate_per_second = new_rate;
     }
 
 /*     #[view]
