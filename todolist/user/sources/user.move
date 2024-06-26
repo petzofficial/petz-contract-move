@@ -15,8 +15,8 @@ module petz_user::user {
     const EREFERRED_BY_SOMEONE_ELSE: u64 = 3;
 
     struct UserRegistry has key {
-    usernames: Table<String, address>,
-    emails: Table<String, address>,
+        usernames: Table<String, address>,
+        emails: Table<String, address>,
     }
 
     // Add new error codes
@@ -26,8 +26,8 @@ module petz_user::user {
     /// User profile struct
     struct UserProfile has key, copy, store {
         name: Option<String>,
-        email: Option<String>,
-        username: Option<String>,
+        email: String,
+        username: String,
         phone: Option<String>,
         birthday: Option<String>,
         gender: Option<String>,
@@ -89,7 +89,7 @@ module petz_user::user {
     }
 
     /// Sign up for user data struct
-    public entry fun signup(account: &signer, name: Option<String>, email: Option<String>, username: Option<String>) acquires UserRegistry {
+    public entry fun signup(account: &signer, name: Option<String>, email: String, username: String) acquires UserRegistry {
         let account_addr = signer::address_of(account);
 
         // Check if UserRegistry exists, if not, create it
@@ -99,11 +99,12 @@ module petz_user::user {
                 emails: table::new(),
             });
         };
+
+        let user_registry = borrow_global_mut<UserRegistry>(@petz_user);
         
         // Check if the username or email already exists
-        let user_registry = borrow_global_mut<UserRegistry>(@petz_user);
-        assert!(!table::contains(&user_registry.usernames, username), error::already_exists(EUSERNAME_ALREADY_EXISTS));
-        assert!(!table::contains(&user_registry.emails, email), error::already_exists(EEMAIL_ALREADY_EXISTS));
+        assert!(is_username_available(user_registry,username), error::already_exists(EUSERNAME_ALREADY_EXISTS));
+        assert!(is_email_available(user_registry,email), error::already_exists(EEMAIL_ALREADY_EXISTS));
         
         // Add the new username and email to the registry
         table::add(&mut user_registry.usernames, username, account_addr);
@@ -157,8 +158,8 @@ module petz_user::user {
     public entry fun update_profile(
         account: &signer, 
         name: Option<String>, 
-        email: Option<String>, 
-        username: Option<String>,  
+        email: String, 
+        username: String,
         phone: Option<String>,
         birthday: Option<String>,
         gender: Option<String>,
@@ -178,14 +179,14 @@ module petz_user::user {
         
         // Check and update username if changed
         if (old_username != username) {
-            assert!(!table::contains(&user_registry.usernames, username), error::already_exists(EUSERNAME_ALREADY_EXISTS));
+            assert!(is_username_available(user_registry,username), error::already_exists(EUSERNAME_ALREADY_EXISTS));
             table::remove(&mut user_registry.usernames, old_username);
             table::add(&mut user_registry.usernames, username, account_addr);
         };
 
         // Check and update email if changed
         if (old_email != email) {
-            assert!(!table::contains(&user_registry.emails, email), error::already_exists(EEMAIL_ALREADY_EXISTS));
+            assert!(is_email_available(user_registry,email), error::already_exists(EEMAIL_ALREADY_EXISTS));
             table::remove(&mut user_registry.emails, old_email);
             table::add(&mut user_registry.emails, email, account_addr);
         };
@@ -333,16 +334,12 @@ module petz_user::user {
     }
 
     // Helper functions should also include the acquires annotation
-    #[view]
-    public fun is_username_available(username: String): bool acquires UserRegistry {
-        let user_registry = borrow_global<UserRegistry>(@petz_user);
-        !table::contains(&user_registry.usernames, username)
+    public fun is_username_available(user_registry: &UserRegistry, username: String): bool {
+    !table::contains(&user_registry.usernames, username)
     }
 
-    #[view]
-    public fun is_email_available(email: String): bool acquires UserRegistry {
-        let user_registry = borrow_global<UserRegistry>(@petz_user);
-        !table::contains(&user_registry.emails, email)
+    public fun is_email_available(user_registry: &UserRegistry, email: String): bool {
+    !table::contains(&user_registry.emails, email)
     }
     
 /*     #[view]
