@@ -13,15 +13,13 @@ module petz_user::user {
     const EUSER_ALREADY_EXISTS: u64 = 1;
     const EENERGY_ALREADY_CLAIMED: u64 = 2;
     const EREFERRED_BY_SOMEONE_ELSE: u64 = 3;
+    const EUSERNAME_ALREADY_EXISTS: u64 = 4;
+    const EEMAIL_ALREADY_EXISTS: u64 = 5;
 
     struct UserRegistry has key {
         usernames: Table<String, address>,
         emails: Table<String, address>,
     }
-
-    // Add new error codes
-    const EUSERNAME_ALREADY_EXISTS: u64 = 4;
-    const EEMAIL_ALREADY_EXISTS: u64 = 5;
 
     /// User profile struct
     struct UserProfile has key, copy, store {
@@ -88,8 +86,38 @@ module petz_user::user {
         psc_reward: u64
     }
 
+    /// Initialize user resources
+    public entry fun initialize_user(account: &signer) {
+        let account_addr = signer::address_of(account);
+
+        if (!exists<Energy>(account_addr)) {
+            move_to(account, Energy {
+                energy: 100,
+                last_claimed: timestamp::now_seconds(),
+            });
+        };
+
+        if (!exists<UserExperience>(account_addr)) {
+            move_to(account, UserExperience {
+                experience: 0,
+                level: 1,
+            });
+        };
+
+        if (!exists<ReferralReward>(account_addr)) {
+            move_to(account, ReferralReward {
+                referrer: option::none(),
+                referrals: table::new(),
+                energy_reward: 0,
+                experience_reward: 0,
+                pgc_reward: 0,
+                psc_reward: 0
+            });
+        };
+    }
+
     /// Sign up for user data struct
-    public entry fun signup(account: &signer, 
+    public entry fun create_profile(account: &signer, 
         name: String, 
         email: String, 
         username: String,
@@ -136,7 +164,6 @@ module petz_user::user {
             location,
             created_at: timestamp::now_seconds(),
             profile_image_url,
-    //        invitation_code,
         };
 
         move_to(account, UserData {
@@ -145,24 +172,8 @@ module petz_user::user {
             login_history_events: account::new_event_handle<LoginHistory>(account),
         });
 
-        move_to(account, Energy {
-            energy: 100,
-            last_claimed: timestamp::now_seconds(),
-        });
-
-        move_to(account, UserExperience {
-            experience: 0,
-            level: 1,
-        });
-
-        move_to(account, ReferralReward {
-            referrer: option::none(),
-            referrals: table::new(),
-            energy_reward: 0,
-            experience_reward: 0,
-            pgc_reward: 0,
-            psc_reward: 0
-        });
+        // Initialize user resources
+        //initialize_user(account);
     }
 
     /// Update user profile
@@ -237,7 +248,11 @@ module petz_user::user {
     /// Claim daily energy
     public entry fun claim_energy(account: &signer) acquires Energy {
         let account_addr = signer::address_of(account);
-        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        
+        // Initialize user resources if they don't exist
+        if (!exists<Energy>(account_addr)) {
+            initialize_user(account);
+        };
 
         let energy = borrow_global_mut<Energy>(account_addr);
         let current_time = timestamp::now_seconds();
@@ -290,7 +305,11 @@ module petz_user::user {
     /// Gain experience
     public entry fun gain_experience(account: &signer, experience_points: u64) acquires UserExperience {
         let account_addr = signer::address_of(account);
-        assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        
+        // Initialize user resources if they don't exist
+        if (!exists<UserExperience>(account_addr)) {
+            initialize_user(account);
+        };
 
         let user_experience = borrow_global_mut<UserExperience>(account_addr);
         user_experience.experience = user_experience.experience + experience_points;
@@ -311,46 +330,58 @@ module petz_user::user {
         (user_experience.experience, user_experience.level)
     }
 
-    /// Set referrer
-    public entry fun set_referrer(account: &signer, referrer_addr: address) acquires ReferralReward {
+     /// Earn PGC reward via referral link
+    public entry fun claim_referral_reward(account: &signer, referrer_addr: address) acquires ReferralReward, UserData {
         let account_addr = signer::address_of(account);
-        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        
+        // Initialize user resources if they don't exist
+        if (!exists<ReferralReward>(account_addr)) {
+            initialize_user(account);
+        };
 
-        let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
-        referral_reward.referrer = option::some(referrer_addr);
-    }
-
-    /// Refer a new user
-    public entry fun refer_user(account: &signer, new_acc_addr: address) acquires ReferralReward, Energy, UserExperience {
-        let account_addr = signer::address_of(account);
-        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
-
+        // Ensure the user hasn't already been referred
         let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
         assert!(option::is_none(&referral_reward.referrer), error::invalid_state(EREFERRED_BY_SOMEONE_ELSE));
 
-        table::add(&mut referral_reward.referrals, new_acc_addr, true);
+        // Set the referrer
+        referral_reward.referrer = option::some(referrer_addr);
 
-        // Award energy and experience rewards
-        let energy = borrow_global_mut<Energy>(account_addr);
-        energy.energy = energy.energy + referral_reward.energy_reward;
+        // Ensure the referrer exists
+        assert!(exists<ReferralReward>(referrer_addr), error::not_found(EUSER_NOT_FOUND));
 
-        //let user_experience = borrow_global_mut<UserExperience>(account_addr);
-        gain_experience(account, referral_reward.experience_reward);
+        // Add the new user to the referrer's referrals
+        let referrer_reward = borrow_global_mut<ReferralReward>(referrer_addr);
+        table::add(&mut referrer_reward.referrals, account_addr, true);
+
+        // Award PGC reward to the referrer
+        referrer_reward.pgc_reward = referrer_reward.pgc_reward + 10; // Adjust the reward amount as needed
+
+        // Optionally, you can also award some PGC to the new user
+        referral_reward.pgc_reward = referral_reward.pgc_reward + 5; // Adjust the reward amount as needed
+
+        // If you want to record this in the user's profile, you can do so here
+        if (exists<UserData>(account_addr)) {
+            let user_data = borrow_global_mut<UserData>(account_addr);
+            // You might want to add a field to UserProfile to record this, e.g.:
+            // user_data.profile.referred_by = option::some(referrer_addr);
+        };
     }
 
+    // ... (other functions remain the same)
+
     #[view]
-    public fun get_referrer(account_addr: address): Option<address> acquires ReferralReward {
+    public fun get_referral_reward(account_addr: address): u64 acquires ReferralReward {
         assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
-        borrow_global<ReferralReward>(account_addr).referrer
+        borrow_global<ReferralReward>(account_addr).pgc_reward
     }
 
     // Helper functions should also include the acquires annotation
     public fun is_username_available(user_registry: &UserRegistry, username: String): bool {
-    !table::contains(&user_registry.usernames, username)
+        !table::contains(&user_registry.usernames, username)
     }
 
     public fun is_email_available(user_registry: &UserRegistry, email: String): bool {
-    !table::contains(&user_registry.emails, email)
+        !table::contains(&user_registry.emails, email)
     }
     
 /*     #[view]
