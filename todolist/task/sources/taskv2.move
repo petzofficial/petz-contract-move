@@ -44,9 +44,9 @@ module task_management::task {
     
     //struct CoinType has key {}
 
-    struct MintCapStore <phantom CoinType > has key {
-        mint_cap: MintCapability<CoinType>,
-    }
+    //struct MintCapStore <phantom CoinType > has key {
+    //    mint_cap: MintCapability<CoinType>,
+    //}
 
     struct CapStore<CapType: store + copy> has key, store {
         cap: CapType,
@@ -86,7 +86,7 @@ module task_management::task {
 
 
 
-    public entry fun add_task <CoinType> (
+    public entry fun add_task (
         account: &signer,
 //        task_id: u64,
         task_name: String,
@@ -105,11 +105,11 @@ module task_management::task {
             });
           
         };
-        if (!coin::is_account_registered<CoinType>(account_addr)) {
-                coin::register<CoinType>(account);
-        };
+        //if (!coin::is_account_registered<CoinType>(account_addr)) {
+        //         coin::register<CoinType>(account);
+        //};
 
-          // coin::register<PetZSilverCoin>(account);
+       
        
         //assert!(!table::contains(&borrow_global<TaskManager>(account_addr).tasks, task_id), error::already_exists(ETASK_ALREADY_EXISTS));
         //assert!(vector::length(&task_name) <= MAX_TASK_NAME_LENGTH, error::invalid_argument(ETASK_ALREADY_EXISTS));
