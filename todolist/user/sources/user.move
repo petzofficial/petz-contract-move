@@ -330,8 +330,8 @@ module petz_user::user {
         (user_experience.experience, user_experience.level)
     }
 
-     /// Earn PGC reward via referral link
-    public entry fun claim_referral_reward(account: &signer, referrer_addr: address) acquires ReferralReward, UserData {
+    /// Earn PGC reward via referral link
+    public entry fun claim_referral_reward(account: &signer, referrer_addr: address) acquires ReferralReward {
         let account_addr = signer::address_of(account);
         
         // Initialize user resources if they don't exist
@@ -339,31 +339,28 @@ module petz_user::user {
             initialize_user(account);
         };
 
-        // Ensure the user hasn't already been referred
-        let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
-        assert!(option::is_none(&referral_reward.referrer), error::invalid_state(EREFERRED_BY_SOMEONE_ELSE));
-
-        // Set the referrer
-        referral_reward.referrer = option::some(referrer_addr);
-
         // Ensure the referrer exists
         assert!(exists<ReferralReward>(referrer_addr), error::not_found(EUSER_NOT_FOUND));
 
-        // Add the new user to the referrer's referrals
-        let referrer_reward = borrow_global_mut<ReferralReward>(referrer_addr);
-        table::add(&mut referrer_reward.referrals, account_addr, true);
+        {
+            // Ensure the user hasn't already been referred
+            let referral_reward = borrow_global_mut<ReferralReward>(account_addr);
+            assert!(option::is_none(&referral_reward.referrer), error::invalid_state(EREFERRED_BY_SOMEONE_ELSE));
 
-        // Award PGC reward to the referrer
-        referrer_reward.pgc_reward = referrer_reward.pgc_reward + 10; // Adjust the reward amount as needed
+            // Set the referrer
+            referral_reward.referrer = option::some(referrer_addr);
 
-        // Optionally, you can also award some PGC to the new user
-        referral_reward.pgc_reward = referral_reward.pgc_reward + 5; // Adjust the reward amount as needed
+            // Award PGC to the new user
+            referral_reward.pgc_reward = referral_reward.pgc_reward + 5; // Adjust the reward amount as needed
+        };
 
-        // If you want to record this in the user's profile, you can do so here
-        if (exists<UserData>(account_addr)) {
-            let user_data = borrow_global_mut<UserData>(account_addr);
-            // You might want to add a field to UserProfile to record this, e.g.:
-            // user_data.profile.referred_by = option::some(referrer_addr);
+        {
+            // Add the new user to the referrer's referrals and award PGC reward
+            let referrer_reward = borrow_global_mut<ReferralReward>(referrer_addr);
+            table::add(&mut referrer_reward.referrals, account_addr, true);
+
+            // Award PGC reward to the referrer
+            referrer_reward.pgc_reward = referrer_reward.pgc_reward + 10; // Adjust the reward amount as needed
         };
     }
 
