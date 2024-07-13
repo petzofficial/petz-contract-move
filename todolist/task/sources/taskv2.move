@@ -9,7 +9,7 @@ module task_management::task {
    // use task_management::petz_gold_coin;
     
     //use std::hash;
-    use aptos_framework::coin::{Self, Coin, MintCapability};
+    use aptos_framework::coin::{Self, Coin};
 
     /// Error codes
     const ETASK_PRIORITY_ERROR: u64 = 0;
