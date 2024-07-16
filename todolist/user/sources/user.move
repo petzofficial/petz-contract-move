@@ -273,8 +273,9 @@ module petz_user::user {
 
     #[view]
     public fun get_energy(account_addr: address): u64 acquires Energy {
-        initialize_user(account);
-        //assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        //let account_addr = signer::address_of(account);
+        //initialize_user(account);
+        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<Energy>(account_addr).energy
     }
 
@@ -306,8 +307,9 @@ module petz_user::user {
 
     #[view]
     public fun get_selected_nft(account_addr: address): Option<NFT> acquires NFTCollection {
-        initialize_user(account);
-        //assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        //let account_addr = signer::address_of(account);
+        //initialize_user(account);
+        assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<NFTCollection>(account_addr).selected_nft
     }
 
@@ -334,8 +336,9 @@ module petz_user::user {
 
     #[view]
     public fun get_user_experience(account_addr: address): (u64, u64) acquires UserExperience {
-        initialize_user(account);
-        //assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        //let account_addr = signer::address_of(account);
+        //initialize_user(account);
+        assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
         let user_experience = borrow_global<UserExperience>(account_addr);
         (user_experience.experience, user_experience.level)
     }
@@ -378,8 +381,9 @@ module petz_user::user {
 
     #[view]
     public fun get_referral_reward(account_addr: address): u64 acquires ReferralReward {
-        initialize_user(account);
-        //assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        //let account_addr = signer::address_of(account);
+        //initialize_user(account);
+        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<ReferralReward>(account_addr).pgc_reward
     }
 
