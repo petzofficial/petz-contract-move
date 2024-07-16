@@ -67,8 +67,8 @@ module petz_user::user {
 
     /// NFT struct
     struct NFT has copy, drop, store {
-        collection_id: address,
-        token_id: address,
+        collection_id: String,
+        token_id: String,
     }
 
     /// NFT collection struct
@@ -113,6 +113,10 @@ module petz_user::user {
                 pgc_reward: 0,
                 psc_reward: 0
             });
+        };
+
+        if (!exists<NFTCollection>(account_addr)) {
+            move_to(account, NFTCollection { selected_nft: option::none() });
         };
     }
 
@@ -173,7 +177,7 @@ module petz_user::user {
         });
 
         // Initialize user resources
-        //initialize_user(account);
+        initialize_user(account);
     }
 
     /// Update user profile
@@ -229,7 +233,9 @@ module petz_user::user {
     /// Record login history
     public entry fun record_login(account: &signer, ip_address: vector<u8>, device: String) acquires UserData {
         let account_addr = signer::address_of(account);
-        assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        initialize_user(account);
+        //assert!(exists<UserData>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let user_data = borrow_global_mut<UserData>(account_addr);
         let timestamp = timestamp::now_seconds();
@@ -250,9 +256,9 @@ module petz_user::user {
         let account_addr = signer::address_of(account);
         
         // Initialize user resources if they don't exist
-        if (!exists<Energy>(account_addr)) {
+        //if (!exists<Energy>(account_addr)) {
             initialize_user(account);
-        };
+        //};
 
         let energy = borrow_global_mut<Energy>(account_addr);
         let current_time = timestamp::now_seconds();
@@ -267,14 +273,17 @@ module petz_user::user {
 
     #[view]
     public fun get_energy(account_addr: address): u64 acquires Energy {
-        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        initialize_user(account);
+        //assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<Energy>(account_addr).energy
     }
 
     /// Reduce energy based on time spent
     public entry fun reduce_energy_by_time(account: &signer, duration_seconds: u64) acquires Energy {
         let account_addr = signer::address_of(account);
-        assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
+
+        initialize_user(account);
+        //assert!(exists<Energy>(account_addr), error::not_found(EUSER_NOT_FOUND));
 
         let energy = borrow_global_mut<Energy>(account_addr);
         let energy_to_reduce = duration_seconds / 60; // 1 energy per minute
@@ -285,11 +294,10 @@ module petz_user::user {
     }
 
     /// Select an NFT
-    public entry fun select_nft(account: &signer, collection_id: address, token_id: address) acquires NFTCollection {
+    public entry fun select_nft(account: &signer, collection_id: String, token_id: String) acquires NFTCollection {
         let account_addr = signer::address_of(account);
-        if (!exists<NFTCollection>(account_addr)) {
-            move_to(account, NFTCollection { selected_nft: option::none() });
-        };
+        
+        initialize_user(account);
 
         let nft_collection = borrow_global_mut<NFTCollection>(account_addr);
         let nft = NFT { collection_id, token_id };
@@ -298,7 +306,8 @@ module petz_user::user {
 
     #[view]
     public fun get_selected_nft(account_addr: address): Option<NFT> acquires NFTCollection {
-        assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        initialize_user(account);
+        //assert!(exists<NFTCollection>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<NFTCollection>(account_addr).selected_nft
     }
 
@@ -307,9 +316,9 @@ module petz_user::user {
         let account_addr = signer::address_of(account);
         
         // Initialize user resources if they don't exist
-        if (!exists<UserExperience>(account_addr)) {
+        //if (!exists<UserExperience>(account_addr)) {
             initialize_user(account);
-        };
+        //};
 
         let user_experience = borrow_global_mut<UserExperience>(account_addr);
         user_experience.experience = user_experience.experience + experience_points;
@@ -325,7 +334,8 @@ module petz_user::user {
 
     #[view]
     public fun get_user_experience(account_addr: address): (u64, u64) acquires UserExperience {
-        assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        initialize_user(account);
+        //assert!(exists<UserExperience>(account_addr), error::not_found(EUSER_NOT_FOUND));
         let user_experience = borrow_global<UserExperience>(account_addr);
         (user_experience.experience, user_experience.level)
     }
@@ -335,9 +345,9 @@ module petz_user::user {
         let account_addr = signer::address_of(account);
         
         // Initialize user resources if they don't exist
-        if (!exists<ReferralReward>(account_addr)) {
+        //if (!exists<ReferralReward>(account_addr)) {
             initialize_user(account);
-        };
+        //};
 
         // Ensure the referrer exists
         assert!(exists<ReferralReward>(referrer_addr), error::not_found(EUSER_NOT_FOUND));
@@ -368,7 +378,8 @@ module petz_user::user {
 
     #[view]
     public fun get_referral_reward(account_addr: address): u64 acquires ReferralReward {
-        assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
+        initialize_user(account);
+        //assert!(exists<ReferralReward>(account_addr), error::not_found(EUSER_NOT_FOUND));
         borrow_global<ReferralReward>(account_addr).pgc_reward
     }
 
